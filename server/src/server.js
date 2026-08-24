@@ -2,8 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
+import problemRoutes from "../routes/problem.routes.js"
 
 import { auth } from "./lib/auth.js";
+import connectDB from "../utils/connectDB.js";
 
 const app = express();
 
@@ -15,7 +17,10 @@ app.use(
   })
 );
 
+app.use(express.json())
+
 app.all("/api/auth/*splat", toNodeHandler(auth));
+app.use("/api/problems", problemRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -24,7 +29,7 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
+await connectDB();
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
