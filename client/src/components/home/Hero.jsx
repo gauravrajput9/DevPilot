@@ -1,8 +1,11 @@
 import { ArrowRight, Code2, Flame, Play, Sparkles } from "lucide-react";
 import { authClient } from "../../lib/authClient";
 import { Link } from "react-router-dom";
+
 const Hero = () => {
+
   const { data: session, isPending } = authClient.getSession();
+  
   return (
     <section className="relative overflow-hidden">
       {/* Background glow */}

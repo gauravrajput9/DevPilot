@@ -1,57 +1,78 @@
 import { Problem } from "../models/problems.model.js";
-import { LANGUAGES } from "../constants/languages.js";
-// Get all problems
+
 export const getProblems = async (req, res) => {
     try {
-        const problems = await Problem.find()
+        const problems = await Problem.find({})
             .select(
-                "title slug difficulty category tags createdAt"
+                "title slug description difficulty category tags starterCode examples constraints"
             )
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
+            count: problems.length,
             problems,
         });
-    } catch (error) {
-        console.error("Get problems error:", error);
 
-        res.status(500).json({
+    } catch (error) {
+        console.log("Error From Get Problems: ", error)
+        return res.status(500).json({
             success: false,
             message: "Failed to fetch problems",
         });
     }
-};
+}
 
-// Get single problem
+
 export const getProblem = async (req, res) => {
     try {
-        const { id } = req.params;
 
-        const problem = await Problem.findById(id).select(
-            "-testCases"
-        );
+        const { id } = req.params
+
+        const problem = await Problem.findById(id)
+            .select(
+                "title slug description difficulty category tags starterCode examples constraints testCases"
+            )
+            .lean();
 
         if (!problem) {
             return res.status(404).json({
-                success: false,
                 message: "Problem not found",
-            });
+                success: false
+            })
         }
+        const publicTestCases = problem.testCases
+            .filter((testCase) => !testCase.hidden)
+            .map((testCase) => ({
+                input: testCase.input,
+                expectedOutput: testCase.expectedOutput,
+            }));
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
-            problem,
+            problem: {
+                _id: problem._id,
+                title: problem.title,
+                slug: problem.slug,
+                description: problem.description,
+                difficulty: problem.difficulty,
+                category: problem.category,
+                tags: problem.tags,
+                starterCode: problem.starterCode,
+                examples: problem.examples,
+                constraints: problem.constraints,
+                testCases: publicTestCases,
+            },
         });
-    } catch (error) {
-        console.error("Get problem error:", error);
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch problem",
-        });
+    } catch (error) {
+        console.log("Error from get Problem: ", error)
+        return res.status(500).json({
+            message: "Failed to fetch the required problem",
+            success: false
+        })
     }
-};
+}
 
 
 
@@ -64,14 +85,12 @@ export const createProblem = async (req, res) => {
             difficulty,
             category,
             tags,
-            allowedLanguages,
             starterCode,
             examples,
             constraints,
             testCases,
         } = req.body;
 
-        // Validate required fields
         if (
             !title ||
             !slug ||
@@ -81,45 +100,30 @@ export const createProblem = async (req, res) => {
         ) {
             return res.status(400).json({
                 success: false,
-                message: "Required fields are missing",
+                message: "Title, slug, description, difficulty and category are required",
             });
         }
 
-        // Validate allowedLanguages
-        if (
-            !Array.isArray(allowedLanguages) ||
-            allowedLanguages.length === 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Select at least one programming language",
-            });
-        }
-
-        // Check whether all languages are supported
-        const invalidLanguages = allowedLanguages.filter(
-            (language) => !LANGUAGES[language]
-        );
-
-        if (invalidLanguages.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid programming language",
-                invalidLanguages,
-            });
-        }
-
-        // Check duplicate slug
-        const existingProblem = await Problem.findOne({ slug });
-
+        const existingProblem = await Problem.findOne({
+            $or: [
+                { slug },
+                { title: title.trim() }
+            ]
+        });
         if (existingProblem) {
+            if (existingProblem.slug === slug) {
+                return res.status(409).json({
+                    success: false,
+                    message: "A problem with this slug already exists"
+                });
+            }
+
             return res.status(409).json({
                 success: false,
-                message: "A problem with this slug already exists",
+                message: "A problem with this title already exists"
             });
         }
 
-        // Create problem
         const problem = await Problem.create({
             title,
             slug,
@@ -127,7 +131,6 @@ export const createProblem = async (req, res) => {
             difficulty,
             category,
             tags,
-            allowedLanguages,
             starterCode,
             examples,
             constraints,
@@ -145,69 +148,6 @@ export const createProblem = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to create problem",
-        });
-    }
-};
-
-// Update problem
-export const updateProblem = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const problem = await Problem.findByIdAndUpdate(
-            id,
-            req.body,
-            {
-                new: true,
-                runValidators: true,
-            }
-        );
-
-        if (!problem) {
-            return res.status(404).json({
-                success: false,
-                message: "Problem not found",
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            problem,
-        });
-    } catch (error) {
-        console.error("Update problem error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update problem",
-        });
-    }
-};
-
-// Delete problem
-export const deleteProblem = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const problem = await Problem.findByIdAndDelete(id);
-
-        if (!problem) {
-            return res.status(404).json({
-                success: false,
-                message: "Problem not found",
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Problem deleted successfully",
-        });
-    } catch (error) {
-        console.error("Delete problem error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete problem",
         });
     }
 };

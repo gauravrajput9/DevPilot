@@ -1,23 +1,19 @@
 import express from "express";
+import { requireAuth, requireAdmin } from "../middleware/auth.middleware.js";
+import { getProblems, getProblem, createProblem } from "../controllers/problem.controller.js";
 
-import {
-  getProblems,
-  getProblem,
-  createProblem,
-  updateProblem,
-  deleteProblem,
-} from "../controllers/problem.controller.js";
+
 
 const router = express.Router();
 
-router.get("/", getProblems);
+router.get("/", requireAuth, getProblems);
 
-router.get("/:id", getProblem);
+router.get("/:id", requireAuth, getProblem);
 
-router.post("/", createProblem);
+router.post("/",requireAuth, requireAdmin, createProblem);
 
-router.put("/:id", updateProblem);
+// router.put("/:id",requireAuth, requireAdmin, updateProblem);
 
-router.delete("/:id", deleteProblem);
+// router.delete("/:id", requireAuth, requireAdmin, deleteProblem);
 
 export default router;

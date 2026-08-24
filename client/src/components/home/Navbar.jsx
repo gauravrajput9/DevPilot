@@ -2,7 +2,6 @@ import { ArrowRight, Bot, Menu, Moon, Search, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { authClient } from "../../lib/authClient";
-import { LogOut } from "lucide-react";
 import { useEffect } from "react";
 import { useRef } from "react";
 
@@ -17,10 +16,10 @@ const navItems = [
 
 const Navbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const searchRef = useRef(null);
 
-
+  // console.log(session?.user);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -76,21 +75,7 @@ const Navbar = () => {
 
         {/* Desktop Right Section */}
         <div className="hidden items-center gap-3 lg:flex">
-          {/* Search */}
-          {/* <button
-            ref={searchRef}
-            className="flex h-10 w-[205px] items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-500 transition hover:border-white/20 hover:text-zinc-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-          >
-            <Search size={16} />
-
-            <span>Search anything...</span>
-
-            <kbd className="ml-auto rounded border border-white/10 px-1.5 py-0.5 text-[10px]">
-              ⌘K
-            </kbd>
-          </button> */}
-
-           <SearchBar/>
+          <SearchBar />
           {/* Theme */}
           <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-zinc-400 transition hover:bg-white/[0.08] hover:text-white">
             <Moon size={17} />
@@ -142,10 +127,25 @@ const Navbar = () => {
             ))}
           </nav>
 
-          <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 py-3 font-semibold">
-            Get Started
-            <ArrowRight size={17} />
-          </button>
+          {!session ? (
+            <Link
+              to="/signup"
+              className="group flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-violet-600/20 transition hover:scale-[1.02]"
+            >
+              Get Started
+              <ArrowRight
+                size={16}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </Link>
+          ) : (
+            <button
+              onClick={() => authClient.signOut()}
+              className="group flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+            >
+              Logout
+            </button>
+          )}
         </div>
       )}
     </header>
@@ -192,6 +192,5 @@ const SearchBar = () => {
     </div>
   );
 };
-
 
 export default Navbar;

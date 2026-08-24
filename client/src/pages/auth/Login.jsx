@@ -2,6 +2,7 @@ import { Check, Eye, EyeOff, LockKeyhole, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthPage";
+import { authClient } from "../../lib/authClient";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +13,8 @@ const Login = () => {
     remember: false,
   });
 
+  console.log(formData);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -21,12 +24,40 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     console.log("Login:", formData);
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email: formData.email,
+        rememberMe: formData.remember,
+        password: formData.password,
+        callbackURL: "/",
+      });
 
-    // API call will be added later
+      if (error) {
+        console.log("Login Page Error: ", error);
+      }
+
+      console.log(data);
+    } catch (error) {
+      console.log("Login Page Handle Submit Error: ", error);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "http://localhost:5173/",
+    });
+  };
+
+  const handleGitHubLogin = async () => {
+    await authClient.signIn.social({
+      provider: "github",
+      callbackURL: "http://localhost:5173/",
+    });
   };
 
   return (
@@ -37,6 +68,7 @@ const Login = () => {
       {/* Social login */}
       <div className="grid grid-cols-2 gap-3">
         <button
+          onClick={handleGitHubLogin}
           type="button"
           className="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] text-sm font-medium text-zinc-300 transition hover:bg-white/[0.07] hover:text-white"
         >
@@ -45,6 +77,7 @@ const Login = () => {
         </button>
 
         <button
+          onClick={handleGoogleLogin}
           type="button"
           className="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] text-sm font-medium text-zinc-300 transition hover:bg-white/[0.07] hover:text-white"
         >

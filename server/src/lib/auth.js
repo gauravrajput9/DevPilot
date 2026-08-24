@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { admin } from "better-auth/plugins";
 import client from "./mongodb.js";
 
 export const auth = betterAuth({
@@ -20,6 +21,10 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
     },
   },
+
+  plugins: [
+    admin(),
+  ],
 
   trustedOrigins: [
     "http://localhost:5173",

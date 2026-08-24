@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import problemRoutes from "../routes/problem.routes.js"
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 import { auth } from "./lib/auth.js";
 import connectDB from "../utils/connectDB.js";
@@ -26,6 +27,15 @@ app.get("/", (req, res) => {
   res.json({
     message: "Server is running",
   });
+});
+
+
+app.get("/api/me", requireAuth, (req, res) => {
+    res.json({
+        message: "Authenticated",
+        user: req.user,
+        session: req.session,
+    });
 });
 
 const PORT = process.env.PORT || 5000;
