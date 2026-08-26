@@ -6,7 +6,7 @@ const testCaseSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        
+
         allowedLanguages: {
             type: [String],
             enum: ["javascript", "python", "cpp", "java", "c", "go"],
@@ -89,8 +89,18 @@ const problemSchema = new mongoose.Schema(
         ],
 
         starterCode: {
-            type: String,
-            default: "",
+            javascript: {
+                type: String,
+                default: "",
+            },
+            python: {
+                type: String,
+                default: "",
+            },
+            cpp: {
+                type: String,
+                default: "",
+            },
         },
 
         examples: [exampleSchema],

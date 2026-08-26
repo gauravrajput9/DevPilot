@@ -61,7 +61,7 @@ const Navbar = () => {
           {navItems.map((item, index) => (
             <a
               key={item}
-              href="#"
+              href={`/${item}`}
               className={`rounded-lg px-3.5 py-2 text-sm transition-all ${
                 index === 0
                   ? "bg-white/[0.06] text-white"

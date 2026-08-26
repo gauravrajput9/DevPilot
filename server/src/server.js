@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth.middleware.js";
 
 import { auth } from "./lib/auth.js";
 import connectDB from "../utils/connectDB.js";
+import submissionRouter from "../routes/submission.routes.js";
 
 const app = express();
 
@@ -20,8 +21,14 @@ app.use(
 
 app.use(express.json())
 
+app.use("/api/submissions", (req, res, next) => {
+  console.log("Submission request:", req.method, req.originalUrl);
+  next();
+});
+
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/problems", problemRoutes);
+app.use("/api/submissions", submissionRouter)
 
 app.get("/", (req, res) => {
   res.json({
@@ -31,11 +38,11 @@ app.get("/", (req, res) => {
 
 
 app.get("/api/me", requireAuth, (req, res) => {
-    res.json({
-        message: "Authenticated",
-        user: req.user,
-        session: req.session,
-    });
+  res.json({
+    message: "Authenticated",
+    user: req.user,
+    session: req.session,
+  });
 });
 
 const PORT = process.env.PORT || 5000;
