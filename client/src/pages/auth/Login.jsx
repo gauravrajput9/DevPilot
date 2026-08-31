@@ -1,11 +1,17 @@
-import { Check, Eye, EyeOff, LockKeyhole, Mail, User } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthPage";
 import { authClient } from "../../lib/authClient";
 
+const getHomeForRole = (role) => (role === "admin" ? "/admin" : "/");
+
 const Login = () => {
+  const navigate = useNavigate();
+  const { data: session, isPending } = authClient.useSession();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -13,7 +19,11 @@ const Login = () => {
     remember: false,
   });
 
-  console.log(formData);
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      navigate(getHomeForRole(session.user.role), { replace: true });
+    }
+  }, [isPending, navigate, session]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -26,37 +36,44 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setLoginError("");
 
-    console.log("Login:", formData);
     try {
       const { data, error } = await authClient.signIn.email({
         email: formData.email,
         rememberMe: formData.remember,
         password: formData.password,
-        callbackURL: "/",
       });
 
       if (error) {
-        console.log("Login Page Error: ", error);
+        setLoginError(error.message || "Unable to sign in. Please try again.");
+        return;
       }
 
-      console.log(data);
+      const { data: currentSession } = await authClient.getSession();
+      const user = currentSession?.user || data?.user;
+
+      navigate(getHomeForRole(user?.role), { replace: true });
     } catch (error) {
       console.log("Login Page Handle Submit Error: ", error);
+      setLoginError("Something went wrong while signing in.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "http://localhost:5173/",
+      callbackURL: "http://localhost:5173/login",
     });
   };
 
   const handleGitHubLogin = async () => {
     await authClient.signIn.social({
       provider: "github",
-      callbackURL: "http://localhost:5173/",
+      callbackURL: "http://localhost:5173/login",
     });
   };
 
@@ -84,6 +101,11 @@ const Login = () => {
           <span className="text-base font-bold">G</span>
           Google
         </button>
+      </div>
+
+      <div className="mt-5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-100">
+        Admin accounts go straight to the DevPilot Admin Panel. Learner
+        accounts continue to the regular DevPilot experience.
       </div>
 
       {/* Divider */}
@@ -183,11 +205,18 @@ const Login = () => {
         </label>
 
         {/* Submit */}
+        {loginError && (
+          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {loginError}
+          </p>
+        )}
+
         <button
           type="submit"
+          disabled={isSubmitting}
           className="h-12 w-full rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 text-sm font-semibold shadow-lg shadow-violet-600/20 transition hover:scale-[1.01] hover:shadow-violet-600/30"
         >
-          Sign in
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
 

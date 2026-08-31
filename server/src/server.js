@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import problemRoutes from "../routes/problem.routes.js"
+import adminRoutes from "../routes/admin.routes.js"
 import { requireAuth } from "../middleware/auth.middleware.js";
 
 import { auth } from "./lib/auth.js";
@@ -29,6 +30,7 @@ app.use("/api/submissions", (req, res, next) => {
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/problems", problemRoutes);
 app.use("/api/submissions", submissionRouter)
+app.use("/api/admin/problems", adminRoutes);
 
 app.get("/", (req, res) => {
   res.json({

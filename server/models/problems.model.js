@@ -7,15 +7,15 @@ const testCaseSchema = new mongoose.Schema(
             required: true,
         },
 
-        allowedLanguages: {
-            type: [String],
-            enum: ["javascript", "python", "cpp", "java", "c", "go"],
-            default: ["javascript"],
-        },
-
         expectedOutput: {
             type: String,
             required: true,
+        },
+
+        allowedLanguages: {
+            type: [String],
+            enum: ["javascript", "python", "cpp"],
+            default: ["javascript"],
         },
 
         hidden: {
@@ -42,15 +42,18 @@ const exampleSchema = new mongoose.Schema(
 
         explanation: {
             type: String,
+            default: "",
         },
     },
     {
-        _id: false,
+        _id: true,
     }
 );
 
+
 const problemSchema = new mongoose.Schema(
     {
+
         title: {
             type: String,
             required: true,
@@ -62,6 +65,7 @@ const problemSchema = new mongoose.Schema(
             required: true,
             unique: true,
             trim: true,
+            lowercase: true,
         },
 
         description: {
@@ -69,50 +73,93 @@ const problemSchema = new mongoose.Schema(
             required: true,
         },
 
-        difficulty: {
+        practiceType: {
             type: String,
-            enum: ["easy", "medium", "hard"],
+            enum: ["coding", "frontend", "backend"],
             required: true,
+            index: true,
         },
+
 
         category: {
             type: String,
             required: true,
             trim: true,
+            lowercase: true,
+            index: true,
         },
 
         tags: [
             {
                 type: String,
                 trim: true,
+                lowercase: true,
             },
         ],
+
+        difficulty: {
+            type: String,
+            enum: ["easy", "medium", "hard"],
+            required: true,
+            index: true,
+        },
+
+        problemType: {
+            type: String,
+            enum: ["single-file", "multi-file"],
+            default: "single-file",
+            index: true,
+        },
+
+        supportedLanguages: {
+            type: [
+                {
+                    type: String,
+                    enum: ["javascript", "python", "cpp"],
+                },
+            ],
+            default: ["javascript"],
+        },
+
 
         starterCode: {
             javascript: {
                 type: String,
                 default: "",
             },
+
             python: {
                 type: String,
                 default: "",
             },
+
             cpp: {
                 type: String,
                 default: "",
             },
         },
 
-        examples: [exampleSchema],
+        examples: {
+            type: [exampleSchema],
+            default: [],
+        },
 
-        constraints: [
-            {
-                type: String,
-            },
-        ],
+        constraints: {
+            type: [String],
+            default: [],
+        },
 
-        testCases: [testCaseSchema],
+        createdBy: {
+            type: String,
+            required: true,
+        },
+
+        testCases: {
+            type: [testCaseSchema],
+            default: [],
+        },
     },
+
     {
         timestamps: true,
     }

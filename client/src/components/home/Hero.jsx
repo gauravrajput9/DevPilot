@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const Hero = () => {
 
-  const { data: session, isPending } = authClient.getSession();
+  const { data: session } = authClient.getSession();
   
   return (
     <section className="relative overflow-hidden">

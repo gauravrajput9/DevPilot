@@ -7,7 +7,7 @@ import { runCode } from "../../services/submissionApi";
 import { useParams } from "react-router-dom";
 import { getProblem } from "../../services/problemApi";
 
-const ProblemPage = () => {
+const ProblemDetailPage = () => {
   const { id } = useParams();
 
   const [language, setLanguage] = useState("javascript");
@@ -34,8 +34,14 @@ const ProblemPage = () => {
         setLoading(true);
 
         const data = await getProblem(id);
+        const fetchedProblem = data.problem;
 
-        setProblem(data.problem);
+        setProblem(fetchedProblem);
+        setCodes({
+          javascript: fetchedProblem.starterCode?.javascript || "",
+          python: fetchedProblem.starterCode?.python || "",
+          cpp: fetchedProblem.starterCode?.cpp || "",
+        });
       } catch (error) {
         console.error("Failed to fetch problem:", error);
 
@@ -47,17 +53,6 @@ const ProblemPage = () => {
 
     fetchProblem();
   }, [id]);
-
-  // Initialize starter code for every language
-  useEffect(() => {
-    if (!problem) return;
-
-    setCodes({
-      javascript: problem.starterCode?.javascript || "",
-      python: problem.starterCode?.python || "",
-      cpp: problem.starterCode?.cpp || "",
-    });
-  }, [problem]);
 
   const handleRun = async () => {
     try {
@@ -173,4 +168,4 @@ const ProblemPage = () => {
   );
 };
 
-export default ProblemPage;
+export default ProblemDetailPage;

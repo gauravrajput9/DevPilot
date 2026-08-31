@@ -1,7 +1,7 @@
 import Navbar from "../components/home/Navbar";
 import Hero from "../components/home/Hero";
 import Features from "./Features";
-import Problems from "./Problems";
+import ProblemsPage from "./ProblemsPage";
 
 const Home = () => {
   return (
@@ -11,7 +11,7 @@ const Home = () => {
       <main>
         <Hero />
         <Features/>
-        <Problems/>
+        <ProblemsPage/>
       </main>
     </div>
   );
