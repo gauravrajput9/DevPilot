@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getProblems } from "../../services/problemApi";
+import { EmptyState, PageError, PageLoading } from "../ui/PageState";
+import { useToast } from "../ui/ToastProvider";
 
 const difficultyOptions = ["all", "easy", "medium", "hard"];
 const problemTypeOptions = ["all", "single-file", "multi-file"];
@@ -44,6 +46,7 @@ const FilterButton = ({ active, children, onClick }) => (
 );
 
 const ProblemList = ({ practiceType, title, description }) => {
+  const toast = useToast();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,14 +65,17 @@ const ProblemList = ({ practiceType, title, description }) => {
         const data = await getProblems({ practiceType });
         setProblems(data.problems || []);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load problems.");
+        const message = err.response?.data?.message || "Failed to load problems.";
+
+        setError(message);
+        toast.error(message, { title: "Unable to load problems" });
       } finally {
         setLoading(false);
       }
     };
 
     loadProblems();
-  }, [practiceType]);
+  }, [practiceType, toast]);
 
   const categoryOptions = useMemo(() => {
     const categories = problems.map((problem) => problem.category).filter(Boolean);
@@ -232,22 +238,21 @@ const ProblemList = ({ practiceType, title, description }) => {
           </div>
         </section>
 
-        {loading && (
-          <div className="rounded-lg border border-slate-800 bg-slate-900/30 px-5 py-4 text-sm text-slate-500">
-            Loading problems...
-          </div>
-        )}
+        {loading && <PageLoading label="Loading problems..." />}
 
         {error && (
-          <div className="rounded-lg border border-red-900/60 bg-red-950/30 px-5 py-4 text-sm text-red-300">
-            {error}
-          </div>
+          <PageError
+            title="Problems could not be loaded"
+            message={error}
+            onAction={() => window.location.reload()}
+          />
         )}
 
         {!loading && !error && filteredProblems.length === 0 && (
-          <div className="rounded-lg border border-slate-800 bg-slate-900/30 px-5 py-4 text-sm text-slate-500">
-            No problems match these filters.
-          </div>
+          <EmptyState
+            title="No problems match these filters"
+            message="Try changing the search term or one of the filters."
+          />
         )}
 
         {!loading && !error && filteredProblems.length > 0 && (

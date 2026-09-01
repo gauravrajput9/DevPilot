@@ -8,6 +8,10 @@ import {
 import {
     getAdminProblems,
     createProblem,
+    updateProblem,
+    deleteProblem,
+    getProblemTestCases,
+    createProblemTestCase,
 } from "../controllers/problem.controller.js";
 
 import {
@@ -77,11 +81,23 @@ router.delete(
     deleteTestCase
 );
 
+router.get(
+  "/problems/:problemId/testcases",
+  requireAuth,
+  requireAdmin,
+  getProblemTestCases
+);
+
+router.post(
+  "/:problemId/testcases/create",
+  createProblemTestCase
+);
+
 //------------------------------------------------------------------------------
 // Future Problem Management
 //------------------------------------------------------------------------------
 
-// router.put("/:id", requireAuth, requireAdmin, updateProblem);
-// router.delete("/:id", requireAuth, requireAdmin, deleteProblem);
+router.put("/update", requireAuth, requireAdmin, updateProblem);
+router.delete("/:problemId", requireAuth, requireAdmin, deleteProblem);
 
 export default router;

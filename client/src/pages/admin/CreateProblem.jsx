@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createProblem } from "../../services/problemApi";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const panelClass =
   "rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6";
@@ -21,6 +22,7 @@ const iconButtonClass =
 
 const CreateProblem = () => {
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -51,6 +53,8 @@ const CreateProblem = () => {
   });
 
   const [tagInput, setTagInput] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -91,6 +95,7 @@ const CreateProblem = () => {
 
     if (formData.tags.includes(tag)) {
       setTagInput("");
+      toast.warning("That tag is already added.", { title: "Duplicate tag" });
       return;
     }
 
@@ -174,20 +179,33 @@ const CreateProblem = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setSubmitError("");
+    setSubmitting(true);
 
-  try {
-    console.log("Problem data:", formData);
+    try {
+      console.log("Problem data:", formData);
 
-    const res = await createProblem(formData);
+      const res = await createProblem(formData);
 
-    console.log("Created problem:", res);
+      console.log("Created problem:", res);
+      toast.success("Problem created successfully.", { title: "Created" });
 
-    navigate("/admin/problems");
-  } catch (error) {
-    console.error("Problem creation failed", error);
-  }
-};
+      navigate("/admin/problems");
+    } catch (error) {
+      console.error("Problem creation failed", error);
+
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create problem.";
+
+      setSubmitError(message);
+      toast.error(message, { title: "Create failed" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -627,12 +645,22 @@ const CreateProblem = () => {
         </section>
 
         <div className="flex justify-end gap-3 pb-10">
+          {submitError && (
+            <p className="mr-auto rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {submitError}
+            </p>
+          )}
+
           <Link to="/admin/problems" className={secondaryButtonClass}>
             Cancel
           </Link>
 
-          <button type="submit" className={`${primaryButtonClass} px-8`}>
-            Create Problem
+          <button
+            type="submit"
+            disabled={submitting}
+            className={`${primaryButtonClass} px-8 disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            {submitting ? "Creating..." : "Create Problem"}
           </button>
         </div>
       </form>

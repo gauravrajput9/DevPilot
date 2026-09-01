@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthPage";
 import { authClient } from "../../lib/authClient";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const getHomeForRole = (role) => (role === "admin" ? "/admin" : "/");
 
 const Login = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const { data: session, isPending } = authClient.useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,34 +49,51 @@ const Login = () => {
       });
 
       if (error) {
-        setLoginError(error.message || "Unable to sign in. Please try again.");
+        const message = error.message || "Unable to sign in. Please try again.";
+
+        setLoginError(message);
+        toast.error(message, { title: "Sign in failed" });
         return;
       }
 
       const { data: currentSession } = await authClient.getSession();
       const user = currentSession?.user || data?.user;
 
+      toast.success("You are signed in.", { title: "Welcome back" });
       navigate(getHomeForRole(user?.role), { replace: true });
     } catch (error) {
       console.log("Login Page Handle Submit Error: ", error);
-      setLoginError("Something went wrong while signing in.");
+      const message = "Something went wrong while signing in.";
+
+      setLoginError(message);
+      toast.error(message, { title: "Sign in failed" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "http://localhost:5173/login",
-    });
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "http://localhost:5173/login",
+      });
+    } catch (error) {
+      console.log("Google login error:", error);
+      toast.error("Unable to start Google sign in.", { title: "Sign in failed" });
+    }
   };
 
   const handleGitHubLogin = async () => {
-    await authClient.signIn.social({
-      provider: "github",
-      callbackURL: "http://localhost:5173/login",
-    });
+    try {
+      await authClient.signIn.social({
+        provider: "github",
+        callbackURL: "http://localhost:5173/login",
+      });
+    } catch (error) {
+      console.log("GitHub login error:", error);
+      toast.error("Unable to start GitHub sign in.", { title: "Sign in failed" });
+    }
   };
 
   return (

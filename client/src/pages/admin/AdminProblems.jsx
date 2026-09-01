@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -10,15 +10,19 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import { getAdminProblems } from "../../services/problemApi";
+import { deleteProblem, getAdminProblems } from "../../services/problemApi";
+import { EmptyState, PageLoading } from "../../components/ui/PageState";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const AdminProblems = () => {
+  const toast = useToast();
   const [problems, setProblems] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const fetchProblems = async () => {
+  const fetchProblems = useCallback(async ({ silent = false } = {}) => {
     try {
       setLoading(true);
       setError("");
@@ -28,22 +32,28 @@ const AdminProblems = () => {
       console.log("Admin problems:", res);
 
       setProblems(res?.problems || []);
+
+      if (!silent) {
+        toast.success("Problem list is up to date.", { title: "Refreshed" });
+      }
     } catch (error) {
       console.error("Admin Problems page error:", error);
 
-      setError(
+      const message =
         error.response?.data?.message ||
-          error.message ||
-          "Failed to load problems",
-      );
+        error.message ||
+        "Failed to load problems";
+
+      setError(message);
+      toast.error(message, { title: "Unable to load problems" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    fetchProblems();
-  }, []);
+    fetchProblems({ silent: true });
+  }, [fetchProblems]);
 
   // Client-side search
   const filteredProblems = useMemo(() => {
@@ -87,6 +97,32 @@ const AdminProblems = () => {
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
+  };
+
+  const handleDeleteProblems = async (problemId) => {
+    const shouldDelete = window.confirm(
+      "Delete this problem? This action cannot be undone.",
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      await deleteProblem(problemId);
+
+      setProblems((prev) =>
+        prev.filter((problem) => problem._id !== problemId),
+      );
+      toast.success("Problem deleted successfully.", { title: "Deleted" });
+    } catch (error) {
+      console.log("Delete problem error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to delete problem.",
+        { title: "Delete failed" },
+      );
+    }
   };
 
   return (
@@ -135,7 +171,7 @@ const AdminProblems = () => {
 
         <button
           type="button"
-          onClick={fetchProblems}
+          onClick={() => fetchProblems()}
           disabled={loading}
           className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -170,31 +206,16 @@ const AdminProblems = () => {
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.025]">
         {loading ? (
-          <div className="flex min-h-[300px] items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 size={28} className="animate-spin text-violet-400" />
-
-              <p className="text-sm text-zinc-500">Loading problems...</p>
-            </div>
-          </div>
+          <PageLoading label="Loading problems..." />
         ) : filteredProblems.length === 0 ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
-              <Search size={20} className="text-zinc-600" />
-            </div>
-
-            <h3 className="mt-4 text-sm font-semibold text-zinc-300">
-              {problems.length === 0
-                ? "No problems found"
-                : "No matching problems"}
-            </h3>
-
-            <p className="mt-1 max-w-sm text-sm text-zinc-600">
-              {problems.length === 0
+          <EmptyState
+            title={problems.length === 0 ? "No problems found" : "No matching problems"}
+            message={
+              problems.length === 0
                 ? "Create your first DevPilot problem to see it here."
-                : "Try changing your search term."}
-            </p>
-
+                : "Try changing your search term."
+            }
+          >
             {problems.length === 0 && (
               <Link
                 to="/admin/problems/create"
@@ -204,7 +225,7 @@ const AdminProblems = () => {
                 Create Problem
               </Link>
             )}
-          </div>
+          </EmptyState>
         ) : (
           <>
             {/* Result count */}
@@ -288,6 +309,9 @@ const AdminProblems = () => {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={() =>
+                              navigate(`/admin/problems/${problem._id}`)
+                            }
                             type="button"
                             title="Edit problem"
                             className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-zinc-500 transition hover:border-violet-500/30 hover:bg-violet-500/10 hover:text-violet-400"
@@ -296,6 +320,7 @@ const AdminProblems = () => {
                           </button>
 
                           <button
+                            onClick={() => handleDeleteProblems(problem._id)}
                             type="button"
                             title="Delete problem"
                             className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-zinc-500 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"

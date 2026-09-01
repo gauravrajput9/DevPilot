@@ -2,13 +2,17 @@ import { Play, Send } from "lucide-react";
 import ProblemDescription from "../../components/problems/ProblemDescription";
 import CodeEditor from "../../components/problems/CodeEditor";
 import OutputPanel from "../../components/problems/OutputPanel";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { runCode } from "../../services/submissionApi";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getProblem } from "../../services/problemApi";
+import { PageError, PageLoading } from "../../components/ui/PageState";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const ProblemDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const toast = useToast();
 
   const [language, setLanguage] = useState("javascript");
 
@@ -27,32 +31,36 @@ const ProblemDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const fetchProblem = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getProblem(id);
+      const fetchedProblem = data.problem;
+
+      setProblem(fetchedProblem);
+      setCodes({
+        javascript: fetchedProblem.starterCode?.javascript || "",
+        python: fetchedProblem.starterCode?.python || "",
+        cpp: fetchedProblem.starterCode?.cpp || "",
+      });
+    } catch (error) {
+      console.error("Failed to fetch problem:", error);
+
+      const message = error.response?.data?.message || "Failed to load problem";
+
+      setError(message);
+      toast.error(message, { title: "Problem unavailable" });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, toast]);
+
   // Fetch problem
   useEffect(() => {
-    const fetchProblem = async () => {
-      try {
-        setLoading(true);
-
-        const data = await getProblem(id);
-        const fetchedProblem = data.problem;
-
-        setProblem(fetchedProblem);
-        setCodes({
-          javascript: fetchedProblem.starterCode?.javascript || "",
-          python: fetchedProblem.starterCode?.python || "",
-          cpp: fetchedProblem.starterCode?.cpp || "",
-        });
-      } catch (error) {
-        console.error("Failed to fetch problem:", error);
-
-        setError(error.response?.data?.message || "Failed to load problem");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProblem();
-  }, [id]);
+  }, [fetchProblem]);
 
   const handleRun = async () => {
     try {
@@ -65,13 +73,16 @@ const ProblemDetailPage = () => {
       });
 
       setOutput(result.output || result.stdout || result.stderr || "No output");
+      toast.success("Code finished running.", { title: "Run complete" });
     } catch (error) {
       console.error("Run error:", error);
 
-      setOutput(
+      const message =
         error.response?.data?.message ||
-          "Something went wrong while running the code.",
-      );
+        "Something went wrong while running the code.";
+
+      setOutput(message);
+      toast.error(message, { title: "Run failed" });
     } finally {
       setRunning(false);
     }
@@ -79,16 +90,20 @@ const ProblemDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center bg-slate-950 text-slate-400">
-        Loading problem...
+      <div className="min-h-screen bg-slate-950 text-white">
+        <PageLoading label="Loading problem..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center bg-slate-950 text-red-400">
-        {error}
+      <div className="min-h-screen bg-slate-950 text-white">
+        <PageError
+          title="Problem could not be loaded"
+          message={error}
+          onAction={fetchProblem}
+        />
       </div>
     );
   }
@@ -112,7 +127,11 @@ const ProblemDetailPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="rounded-md px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white">
+          <button
+            type="button"
+            onClick={() => navigate("/problems")}
+            className="rounded-md px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
             Back
           </button>
         </div>

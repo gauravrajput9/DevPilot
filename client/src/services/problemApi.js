@@ -43,3 +43,54 @@ export const getAdminProblems = async () => {
     throw error;
   }
 };
+
+export const deleteProblem = async (problemId) => {
+  try {
+    const res = await api.delete(`/admin/problems/${problemId}`);
+
+    console.log(res.data);
+
+    return res.data;
+  } catch (error) {
+    console.log("Error Delete Problem:", error);
+    throw error;
+  }
+};
+
+export const updateProblem = async (problemId, payload) => {
+  try {
+    const res = await api.put("/admin/problems/update", { problemId, payload });
+
+    return res.data;
+  } catch (error) {
+    console.log("Error Update Problems: ", error);
+    throw error;
+  }
+};
+
+export const getProblemTestCases = async (problemId) => {
+  try {
+    const res = await api.get(
+      `/admin/problems/${problemId}/testcases`
+    );
+
+    return res.data;
+  } catch (error) {
+    console.log("Problem Test Case fetch error:", error);
+    throw error;
+  }
+};
+
+export const createTestCaseApi = async (problemId, payload) => {
+  try {
+    const res = await api.post(
+      `/admin/problems/${problemId}/testcases/create`, payload
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Problem Test Case Creation error:", error);
+    throw error;
+  }
+}
+export const deleteTestCase = async () => { }
+export const updateTestCase = async () => { }

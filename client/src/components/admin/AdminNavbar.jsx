@@ -1,5 +1,6 @@
 import { Bell, LogOut, ShieldCheck } from "lucide-react";
 import { authClient } from "../../lib/authClient";
+import { Link } from "react-router-dom";
 
 const AdminNavbar = () => {
   const { data: session, isPending } = authClient.useSession();
@@ -27,15 +28,17 @@ const AdminNavbar = () => {
           <ShieldCheck size={20} />
         </div>
 
-        <div>
-          <h1 className="text-lg font-bold leading-tight tracking-tight">
-            DevPilot
-          </h1>
+        <Link to={`/`} >
+          <div>
+            <h1 className="text-lg font-bold leading-tight tracking-tight">
+              DevPilot
+            </h1>
 
-          <p className="text-xs font-medium text-violet-300/80">
-            Admin Panel
-          </p>
-        </div>
+            <p className="text-xs font-medium text-violet-300/80">
+              Admin Panel
+            </p>
+          </div>
+        </Link>
       </div>
 
       <div className="flex items-center gap-3">
@@ -55,9 +58,7 @@ const AdminNavbar = () => {
           </div>
 
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-blue-500 text-sm font-bold shadow-lg shadow-violet-600/20">
-            {user?.name
-              ? user.name.charAt(0).toUpperCase()
-              : "A"}
+            {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
           </div>
         </div>
 

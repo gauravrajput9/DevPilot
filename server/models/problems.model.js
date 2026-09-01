@@ -24,7 +24,7 @@ const testCaseSchema = new mongoose.Schema(
         },
     },
     {
-        _id: false,
+        _id: true,
     }
 );
 
