@@ -12,6 +12,11 @@ const testCaseSchema = new mongoose.Schema(
             required: true,
         },
 
+        explanation: {
+            type: String,
+            default: "",
+        },
+
         allowedLanguages: {
             type: [String],
             enum: ["javascript", "python", "cpp"],

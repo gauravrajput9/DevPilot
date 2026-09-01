@@ -59,7 +59,7 @@ const ProblemDetailPage = () => {
 
   // Fetch problem
   useEffect(() => {
-    fetchProblem();
+    void Promise.resolve().then(() => fetchProblem());
   }, [fetchProblem]);
 
   const handleRun = async () => {

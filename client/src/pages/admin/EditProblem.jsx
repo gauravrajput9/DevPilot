@@ -90,7 +90,7 @@ const EditProblem = () => {
   }, [problemId, toast]);
 
   useEffect(() => {
-    fetchProblem();
+    void Promise.resolve().then(() => fetchProblem());
   }, [fetchProblem]);
 
   const handleChange = (e) => {

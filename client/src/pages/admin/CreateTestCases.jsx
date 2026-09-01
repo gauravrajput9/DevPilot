@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Plus,
@@ -16,8 +16,8 @@ import {
 import {
   getProblemTestCases,
   createTestCaseApi,
-  updateTestCase,
-  deleteTestCase,
+  updateTestCaseApi,
+  deleteTestCaseApi,
 } from "../../services/problemApi";
 
 import { PageError, PageLoading } from "../../components/ui/PageState";
@@ -31,9 +31,10 @@ const emptyTestCase = {
   hidden: true,
 };
 
-const CreateTestCase  = () => {
+const TestCaseManager = () => {
   const { problemId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
 
   const [testCases, setTestCases] = useState([]);
@@ -44,26 +45,20 @@ const CreateTestCase  = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
-  // null = list mode
-  // "create" = create form
-  // "edit" = edit form
-  const [formMode, setFormMode] = useState(null);
+  const [formMode, setFormMode] = useState(() =>
+    searchParams.get("create") === "true" ? "create" : null
+  );
 
   const [editingTestCaseId, setEditingTestCaseId] = useState(null);
 
   const [formData, setFormData] = useState(emptyTestCase);
 
-  // --------------------------------------------------
-  // Fetch Test Cases
-  // --------------------------------------------------
 
   const fetchTestCases = useCallback(async () => {
     try {
-      setLoading(true);
-      setLoadError("");
-
       const res = await getProblemTestCases(problemId);
 
+      setLoadError("");
       setTestCases(res.testCases || []);
     } catch (error) {
       console.log("Get test cases error:", error);
@@ -84,12 +79,21 @@ const CreateTestCase  = () => {
   }, [problemId, toast]);
 
   useEffect(() => {
-    fetchTestCases();
+    void Promise.resolve().then(() => fetchTestCases());
   }, [fetchTestCases]);
 
-  // --------------------------------------------------
-  // Open Create Form
-  // --------------------------------------------------
+  useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setLoadError("");
+    fetchTestCases();
+  };
+
 
   const handleCreateClick = () => {
     setFormData(emptyTestCase);
@@ -97,9 +101,6 @@ const CreateTestCase  = () => {
     setFormMode("create");
   };
 
-  // --------------------------------------------------
-  // Open Edit Form
-  // --------------------------------------------------
 
   const handleEditClick = (testCase) => {
     setFormData({
@@ -120,19 +121,12 @@ const CreateTestCase  = () => {
     setFormMode("edit");
   };
 
-  // --------------------------------------------------
-  // Close Form
-  // --------------------------------------------------
-
   const handleCancel = () => {
     setFormMode(null);
     setEditingTestCaseId(null);
     setFormData(emptyTestCase);
   };
 
-  // --------------------------------------------------
-  // Input Change
-  // --------------------------------------------------
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -143,9 +137,6 @@ const CreateTestCase  = () => {
     }));
   };
 
-  // --------------------------------------------------
-  // Language Selection
-  // --------------------------------------------------
 
   const handleLanguageChange = (language) => {
     setFormData((prev) => {
@@ -160,9 +151,6 @@ const CreateTestCase  = () => {
     });
   };
 
-  // --------------------------------------------------
-  // Create / Update
-  // --------------------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -199,7 +187,7 @@ const CreateTestCase  = () => {
       }
 
       if (formMode === "edit") {
-        const res = await updateTestCase(
+        const res = await updateTestCaseApi(
           problemId,
           editingTestCaseId,
           formData
@@ -232,9 +220,6 @@ const CreateTestCase  = () => {
     }
   };
 
-  // --------------------------------------------------
-  // Delete
-  // --------------------------------------------------
 
   const handleDelete = async (testCaseId) => {
     const confirmed = window.confirm(
@@ -246,7 +231,7 @@ const CreateTestCase  = () => {
     try {
       setDeleting(testCaseId);
 
-      const res = await deleteTestCase(
+      const res = await deleteTestCaseApi(
         problemId,
         testCaseId
       );
@@ -277,24 +262,18 @@ const CreateTestCase  = () => {
     }
   };
 
-  // --------------------------------------------------
-  // Loading
-  // --------------------------------------------------
 
   if (loading) {
     return <PageLoading label="Loading test cases..." />;
   }
 
-  // --------------------------------------------------
-  // Error
-  // --------------------------------------------------
 
   if (loadError) {
     return (
       <PageError
         title="Test cases could not be loaded"
         message={loadError}
-        onAction={fetchTestCases}
+        onAction={handleRetry}
       />
     );
   }
@@ -311,7 +290,7 @@ const CreateTestCase  = () => {
         <button
           type="button"
           onClick={() =>
-            navigate(`/admin/problems/${problemId}/edit`)
+            navigate(`/admin/problems/${problemId}`)
           }
           className="mb-5 flex items-center gap-2 text-sm text-zinc-500 transition hover:text-white"
         >
@@ -752,4 +731,4 @@ const CreateTestCase  = () => {
   );
 };
 
-export default CreateTestCase;
+export default TestCaseManager;

@@ -10,8 +10,6 @@ import {
     createProblem,
     updateProblem,
     deleteProblem,
-    getProblemTestCases,
-    createProblemTestCase,
 } from "../controllers/problem.controller.js";
 
 import {
@@ -81,16 +79,11 @@ router.delete(
     deleteTestCase
 );
 
-router.get(
-  "/problems/:problemId/testcases",
-  requireAuth,
-  requireAdmin,
-  getProblemTestCases
-);
-
 router.post(
-  "/:problemId/testcases/create",
-  createProblemTestCase
+    "/:problemId/testcases/create",
+    requireAuth,
+    requireAdmin,
+    addTestCase
 );
 
 //------------------------------------------------------------------------------

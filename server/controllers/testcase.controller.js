@@ -3,18 +3,78 @@ import { Problem } from "../models/problems.model.js";
 
 const SUPPORTED_LANGUAGES = ["javascript", "python", "cpp"];
 
+const normalizeTestCasePayload = (payload, problem) => {
+    const {
+        input,
+        expectedOutput,
+        explanation = "",
+        allowedLanguages,
+        hidden = false,
+    } = payload;
+
+    if (typeof input !== "string" || !input.trim()) {
+        return {
+            error: "Input is required",
+        };
+    }
+
+    if (
+        typeof expectedOutput !== "string" ||
+        !expectedOutput.trim()
+    ) {
+        return {
+            error: "Expected output is required",
+        };
+    }
+
+    if (
+        !Array.isArray(allowedLanguages) ||
+        allowedLanguages.length === 0
+    ) {
+        return {
+            error: "At least one allowed language is required",
+        };
+    }
+
+    const invalidLanguages = allowedLanguages.filter(
+        (language) => !SUPPORTED_LANGUAGES.includes(language)
+    );
+
+    if (invalidLanguages.length > 0) {
+        return {
+            error: `Invalid language(s): ${invalidLanguages.join(", ")}`,
+        };
+    }
+
+    const unsupportedLanguages = allowedLanguages.filter(
+        (language) => !problem.supportedLanguages.includes(language)
+    );
+
+    if (unsupportedLanguages.length > 0) {
+        return {
+            error: `Language(s) not supported by this problem: ${unsupportedLanguages.join(", ")}`,
+        };
+    }
+
+    return {
+        data: {
+            input: input.trim(),
+            expectedOutput: expectedOutput.trim(),
+            explanation:
+                typeof explanation === "string"
+                    ? explanation.trim()
+                    : "",
+            allowedLanguages,
+            hidden: Boolean(hidden),
+        },
+    };
+};
+
 // ADD TEST CASE
 
 export const addTestCase = async (req, res) => {
     try {
         const { problemId } = req.params;
-
-        const {
-            input,
-            expectedOutput,
-            allowedLanguages,
-            hidden = false,
-        } = req.body;
 
         // Validate problem ID
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
@@ -24,44 +84,9 @@ export const addTestCase = async (req, res) => {
             });
         }
 
-        // Validate input/output
-        if (
-            typeof input !== "string" ||
-            typeof expectedOutput !== "string"
-        ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Input and expectedOutput must be strings",
-            });
-        }
-
-        // Validate languages
-        if (
-            !Array.isArray(allowedLanguages) ||
-            allowedLanguages.length === 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "At least one allowed language is required",
-            });
-        }
-
-        const invalidLanguages = allowedLanguages.filter(
-            (language) =>
-                !SUPPORTED_LANGUAGES.includes(language)
-        );
-
-        if (invalidLanguages.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `Invalid language(s): ${invalidLanguages.join(", ")}`,
-            });
-        }
-
         // Find problem
-        const problem = await Problem.findById(problemId);
+        const problem = await Problem.findById(problemId)
+            .select("supportedLanguages");
 
         if (!problem) {
             return res.status(404).json({
@@ -70,32 +95,35 @@ export const addTestCase = async (req, res) => {
             });
         }
 
-        // Make sure languages are supported by the problem
-        const unsupportedLanguages =
-            allowedLanguages.filter(
-                (language) =>
-                    !problem.supportedLanguages.includes(language)
-            );
+        const { data, error } = normalizeTestCasePayload(
+            req.body,
+            problem
+        );
 
-        if (unsupportedLanguages.length > 0) {
+        if (error) {
             return res.status(400).json({
                 success: false,
-                message: `Language(s) not supported by this problem: ${unsupportedLanguages.join(", ")}`,
+                message: error,
             });
         }
 
         // Add test case
-        problem.testCases.push({
-            input,
-            expectedOutput,
-            allowedLanguages,
-            hidden: Boolean(hidden),
-        });
+        const newTestCase = {
+            _id: new mongoose.Types.ObjectId(),
+            ...data,
+        };
 
-        await problem.save();
-
-        const newTestCase =
-            problem.testCases[problem.testCases.length - 1];
+        await Problem.updateOne(
+            { _id: problemId },
+            {
+                $push: {
+                    testCases: newTestCase,
+                },
+            },
+            {
+                runValidators: true,
+            }
+        );
 
         return res.status(201).json({
             success: true,
@@ -169,7 +197,8 @@ export const getTestCase = async (req, res) => {
             });
         }
 
-        const problem = await Problem.findById(problemId);
+        const problem = await Problem.findById(problemId)
+            .select("testCases");
 
         if (!problem) {
             return res.status(404).json({
@@ -209,13 +238,6 @@ export const updateTestCase = async (req, res) => {
     try {
         const { problemId, testCaseId } = req.params;
 
-        const {
-            input,
-            expectedOutput,
-            allowedLanguages,
-            hidden,
-        } = req.body;
-
         if (
             !mongoose.Types.ObjectId.isValid(problemId) ||
             !mongoose.Types.ObjectId.isValid(testCaseId)
@@ -226,7 +248,8 @@ export const updateTestCase = async (req, res) => {
             });
         }
 
-        const problem = await Problem.findById(problemId);
+        const problem = await Problem.findById(problemId)
+            .select("supportedLanguages testCases._id");
 
         if (!problem) {
             return res.status(404).json({
@@ -244,86 +267,44 @@ export const updateTestCase = async (req, res) => {
             });
         }
 
-        // Update input
-        if (input !== undefined) {
-            if (typeof input !== "string") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Input must be a string",
-                });
-            }
+        const { data, error } = normalizeTestCasePayload(
+            req.body,
+            problem
+        );
 
-            testCase.input = input;
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error,
+            });
         }
 
-        // Update expected output
-        if (expectedOutput !== undefined) {
-            if (typeof expectedOutput !== "string") {
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        "expectedOutput must be a string",
-                });
+        await Problem.updateOne(
+            {
+                _id: problemId,
+                "testCases._id": testCaseId,
+            },
+            {
+                $set: {
+                    "testCases.$.input": data.input,
+                    "testCases.$.expectedOutput": data.expectedOutput,
+                    "testCases.$.explanation": data.explanation,
+                    "testCases.$.allowedLanguages": data.allowedLanguages,
+                    "testCases.$.hidden": data.hidden,
+                },
+            },
+            {
+                runValidators: true,
             }
-
-            testCase.expectedOutput = expectedOutput;
-        }
-
-        // Update languages
-        if (allowedLanguages !== undefined) {
-            if (
-                !Array.isArray(allowedLanguages) ||
-                allowedLanguages.length === 0
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        "At least one allowed language is required",
-                });
-            }
-
-            const invalidLanguages =
-                allowedLanguages.filter(
-                    (language) =>
-                        !SUPPORTED_LANGUAGES.includes(language)
-                );
-
-            if (invalidLanguages.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Invalid language(s): ${invalidLanguages.join(", ")}`,
-                });
-            }
-
-            const unsupportedLanguages =
-                allowedLanguages.filter(
-                    (language) =>
-                        !problem.supportedLanguages.includes(
-                            language
-                        )
-                );
-
-            if (unsupportedLanguages.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Language(s) not supported by this problem: ${unsupportedLanguages.join(", ")}`,
-                });
-            }
-
-            testCase.allowedLanguages = allowedLanguages;
-        }
-
-        // Update hidden status
-        if (hidden !== undefined) {
-            testCase.hidden = Boolean(hidden);
-        }
-
-        await problem.save();
+        );
 
         return res.status(200).json({
             success: true,
             message: "Test case updated successfully",
-            testCase,
+            testCase: {
+                _id: testCaseId,
+                ...data,
+            },
         });
     } catch (error) {
         console.error("Update test case error:", error);
@@ -353,7 +334,8 @@ export const deleteTestCase = async (req, res) => {
             });
         }
 
-        const problem = await Problem.findById(problemId);
+        const problem = await Problem.findById(problemId)
+            .select("testCases._id");
 
         if (!problem) {
             return res.status(404).json({
@@ -371,9 +353,16 @@ export const deleteTestCase = async (req, res) => {
             });
         }
 
-        testCase.deleteOne();
-
-        await problem.save();
+        await Problem.updateOne(
+            { _id: problemId },
+            {
+                $pull: {
+                    testCases: {
+                        _id: testCaseId,
+                    },
+                },
+            }
+        );
 
         return res.status(200).json({
             success: true,

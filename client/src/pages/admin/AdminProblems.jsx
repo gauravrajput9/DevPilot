@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Plus,
-  Search,
-  Loader2,
-  RefreshCw,
-  Pencil,
-  Trash2,
-  AlertCircle,
-} from "lucide-react";
+import { Plus, Search, RefreshCw, Pencil, Trash2, AlertCircle } from "lucide-react";
 
 import { deleteProblem, getAdminProblems } from "../../services/problemApi";
 import { EmptyState, PageLoading } from "../../components/ui/PageState";
@@ -52,7 +44,7 @@ const AdminProblems = () => {
   }, [toast]);
 
   useEffect(() => {
-    fetchProblems({ silent: true });
+    void Promise.resolve().then(() => fetchProblems({ silent: true }));
   }, [fetchProblems]);
 
   // Client-side search

@@ -28,10 +28,6 @@ const EditorTools = ({
     },
   ];
 
-  const currentLanguage =
-    languages.find((item) => item.value === language) ||
-    languages[0];
-
   return (
     <div className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900/80 px-3">
       {/* Left */}

@@ -84,7 +84,8 @@ export const getProblemTestCases = async (problemId) => {
 export const createTestCaseApi = async (problemId, payload) => {
   try {
     const res = await api.post(
-      `/admin/problems/${problemId}/testcases/create`, payload
+      `/admin/problems/${problemId}/testcases`,
+      payload
     );
     return res.data;
   } catch (error) {
@@ -92,5 +93,37 @@ export const createTestCaseApi = async (problemId, payload) => {
     throw error;
   }
 }
-export const deleteTestCase = async () => { }
-export const updateTestCase = async () => { }
+
+export const deleteTestCaseApi = async (
+  problemId,
+  testCaseId
+) => {
+  try {
+    const res = await api.delete(
+      `/admin/problems/${problemId}/testcases/${testCaseId}`
+    );
+
+    return res.data;
+  } catch (error) {
+    console.log("Delete Test Case error:", error);
+    throw error;
+  }
+};
+
+export const updateTestCaseApi = async (
+  problemId,
+  testCaseId,
+  payload
+) => {
+  try {
+    const res = await api.patch(
+      `/admin/problems/${problemId}/testcases/${testCaseId}`,
+      payload
+    );
+
+    return res.data;
+  } catch (error) {
+    console.log("Update Test Case error:", error);
+    throw error;
+  }
+};
