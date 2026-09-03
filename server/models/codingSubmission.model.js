@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const submissionSchema = new mongoose.Schema(
+const codingSubmissionSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
@@ -17,6 +17,7 @@ const submissionSchema = new mongoose.Schema(
 
     language: {
       type: String,
+      enum: ["javascript", "python", "cpp"],
       required: true,
     },
 
@@ -64,7 +65,7 @@ const submissionSchema = new mongoose.Schema(
   }
 );
 
-export const Submission = mongoose.model(
-  "Submission",
-  submissionSchema
+export const CodingSubmission = mongoose.model(
+  "CodingSubmission",
+  codingSubmissionSchema
 );

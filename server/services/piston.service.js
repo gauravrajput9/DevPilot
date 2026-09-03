@@ -1,6 +1,9 @@
 import axios from "axios";
 import { PISTON_LANGUAGES } from "../config/languages.js";
-const PISTON_URL = "http://localhost:2000";
+
+const getPistonUrl = () => {
+  return process.env.PISTON_URL || "http://localhost:2000";
+};
 
 export const executeCode = async ({
   language,
@@ -13,8 +16,10 @@ export const executeCode = async ({
     throw new Error(`Unsupported language: ${language}`);
   }
 
+  const pistonUrl = getPistonUrl();
+
   const response = await axios.post(
-    `${PISTON_URL}/api/v2/execute`,
+    `${pistonUrl}/api/v2/execute`,
     {
       language: config.language,
       version: config.version,
@@ -30,8 +35,10 @@ export const executeCode = async ({
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 15000,
     }
   );
 
   return response.data;
 };
+

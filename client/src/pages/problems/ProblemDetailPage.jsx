@@ -3,7 +3,7 @@ import ProblemDescription from "../../components/problems/ProblemDescription";
 import CodeEditor from "../../components/problems/CodeEditor";
 import OutputPanel from "../../components/problems/OutputPanel";
 import { useState, useEffect, useCallback } from "react";
-import { runCode } from "../../services/submissionApi";
+import { runCode, submitCode } from "../../services/submissionApi";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProblem } from "../../services/problemApi";
 import { PageError, PageLoading } from "../../components/ui/PageState";
@@ -25,6 +25,7 @@ const ProblemDetailPage = () => {
 
   const [output, setOutput] = useState("");
   const [running, setRunning] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Problem
   const [problem, setProblem] = useState(null);
@@ -85,6 +86,41 @@ const ProblemDetailPage = () => {
       toast.error(message, { title: "Run failed" });
     } finally {
       setRunning(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setSubmitting(true);
+      setOutput("Submitting code and judging test cases...");
+
+      const result = await submitCode({
+        problemId: problem._id,
+        language,
+        sourceCode: codes[language],
+      });
+
+      const message = `${result.message} (${result.passedTests}/${result.totalTests} tests passed)`;
+      setOutput(
+        `Status: ${result.status?.toUpperCase() || "DONE"}\nPassed: ${result.passedTests} / ${result.totalTests}\nTime: ${result.executionTime !== null && result.executionTime !== undefined ? result.executionTime + "s" : "N/A"}\nMemory: ${result.memory !== null && result.memory !== undefined ? result.memory + "KB" : "N/A"}${result.failedTest ? `\nFailed on Test: ${result.failedTest.testNumber}${result.failedTest.hidden ? " (Hidden test)" : ""}` : ""}`
+      );
+
+      if (result.status === "accepted") {
+        toast.success(message, { title: "Accepted!" });
+      } else {
+        toast.warning(message, { title: result.message || "Submission finished" });
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+
+      const message =
+        error.response?.data?.message ||
+        "Something went wrong while submitting the code.";
+
+      setOutput(message);
+      toast.error(message, { title: "Submission failed" });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -173,9 +209,14 @@ const ProblemDetailPage = () => {
               {running ? "Running..." : "Run"}
             </button>
 
-            <button className="flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={running || submitting}
+              className="flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <Send size={16} />
-              Submit
+              {submitting ? "Submitting..." : "Submit"}
             </button>
           </div>
 

@@ -1,3 +1,10 @@
+export const SUPPORTED_LANGUAGES = [
+  "javascript",
+  "python",
+  "cpp",
+  "java",
+];
+
 export const PISTON_LANGUAGES = {
   javascript: {
     language: "javascript",

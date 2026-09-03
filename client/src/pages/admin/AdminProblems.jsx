@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, RefreshCw, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Search, RefreshCw, Pencil, Trash2, AlertCircle, ListChecks } from "lucide-react";
 
 import { deleteProblem, getAdminProblems } from "../../services/problemApi";
 import { EmptyState, PageLoading } from "../../components/ui/PageState";
@@ -300,6 +300,17 @@ const AdminProblems = () => {
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              navigate(`/admin/problems/${problem._id}/testcases`)
+                            }
+                            type="button"
+                            title="Manage test cases"
+                            className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-zinc-500 transition hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-400"
+                          >
+                            <ListChecks size={15} />
+                          </button>
+
                           <button
                             onClick={() =>
                               navigate(`/admin/problems/${problem._id}`)

@@ -2,16 +2,14 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
-import problemRoutes from "../routes/problem.routes.js"
-import adminRoutes from "../routes/admin.routes.js"
+import problemRoutes from "../routes/problem.routes.js";
+import adminRoutes from "../routes/admin.routes.js";
+import submissionRoutes from "../routes/submission.routes.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
-
 import { auth } from "./lib/auth.js";
 import connectDB from "../utils/connectDB.js";
-import submissionRouter from "../routes/submission.routes.js";
 
 const app = express();
-
 
 app.use(
   cors({
@@ -20,16 +18,14 @@ app.use(
   })
 );
 
-app.use(express.json())
+app.use(express.json());
 
-app.use("/api/submissions", (req, res, next) => {
-  console.log("Submission request:", req.method, req.originalUrl);
-  next();
-});
-
+// Auth
 app.all("/api/auth/*splat", toNodeHandler(auth));
+
+// Application Routes
 app.use("/api/problems", problemRoutes);
-app.use("/api/submissions", submissionRouter)
+app.use("/api/submissions", submissionRoutes);
 app.use("/api/admin/problems", adminRoutes);
 
 app.get("/", (req, res) => {
@@ -37,7 +33,6 @@ app.get("/", (req, res) => {
     message: "Server is running",
   });
 });
-
 
 app.get("/api/me", requireAuth, (req, res) => {
   res.json({
