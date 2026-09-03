@@ -257,8 +257,8 @@ export const submitCodingCode = async (req, res) => {
     let finalStatus = "accepted";
     let executionTime = null;
     let memory = null;
-    let failedTestNumber = null;
-    let failedTestHidden = false;
+    let failedTestInfo = null;
+    let submissionError = "";
 
     for (let index = 0; index < testCases.length; index++) {
       const testCase = testCases[index];
@@ -277,8 +277,17 @@ export const submitCodingCode = async (req, res) => {
           error.response?.data || error.message
         );
         finalStatus = "runtime_error";
-        failedTestNumber = testNumber;
-        failedTestHidden = Boolean(testCase.hidden);
+        submissionError = error.response?.data?.message || error.message || "Runtime error";
+        failedTestInfo = {
+          testNumber,
+          testCaseId: testCase._id ? String(testCase._id) : undefined,
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: "",
+          stdout: "",
+          error: submissionError,
+          hidden: Boolean(testCase.hidden),
+        };
         break;
       }
 
@@ -287,15 +296,33 @@ export const submitCodingCode = async (req, res) => {
 
       if (compile && (compile.code !== 0 || compile.signal)) {
         finalStatus = "compile_error";
-        failedTestNumber = testNumber;
-        failedTestHidden = Boolean(testCase.hidden);
+        submissionError = compile.stderr || run?.stderr || "Compilation failed";
+        failedTestInfo = {
+          testNumber,
+          testCaseId: testCase._id ? String(testCase._id) : undefined,
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: "",
+          stdout: "",
+          error: submissionError,
+          hidden: Boolean(testCase.hidden),
+        };
         break;
       }
 
       if (!run) {
         finalStatus = "runtime_error";
-        failedTestNumber = testNumber;
-        failedTestHidden = Boolean(testCase.hidden);
+        submissionError = "No execution output received";
+        failedTestInfo = {
+          testNumber,
+          testCaseId: testCase._id ? String(testCase._id) : undefined,
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: "",
+          stdout: "",
+          error: submissionError,
+          hidden: Boolean(testCase.hidden),
+        };
         break;
       }
 
@@ -303,8 +330,17 @@ export const submitCodingCode = async (req, res) => {
         finalStatus = "runtime_error";
         executionTime = run.wall_time ?? null;
         memory = run.memory ?? null;
-        failedTestNumber = testNumber;
-        failedTestHidden = Boolean(testCase.hidden);
+        submissionError = run.stderr || compile?.stderr || "Runtime error";
+        failedTestInfo = {
+          testNumber,
+          testCaseId: testCase._id ? String(testCase._id) : undefined,
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: normalizeOutput(run.stdout ?? run.output ?? ""),
+          stdout: run.stdout ?? "",
+          error: submissionError,
+          hidden: Boolean(testCase.hidden),
+        };
         break;
       }
 
@@ -316,8 +352,16 @@ export const submitCodingCode = async (req, res) => {
 
       if (actualOutput !== expectedOutput) {
         finalStatus = "wrong_answer";
-        failedTestNumber = testNumber;
-        failedTestHidden = Boolean(testCase.hidden);
+        failedTestInfo = {
+          testNumber,
+          testCaseId: testCase._id ? String(testCase._id) : undefined,
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput,
+          stdout: run.stdout ?? "",
+          error: "",
+          hidden: Boolean(testCase.hidden),
+        };
         break;
       }
 
@@ -330,6 +374,8 @@ export const submitCodingCode = async (req, res) => {
     submission.totalTests = testCases.length;
     submission.executionTime = executionTime;
     submission.memory = memory;
+    submission.error = submissionError;
+    submission.failedTest = failedTestInfo;
     await submission.save();
 
     /* 11. Update user problem stats */
@@ -375,6 +421,7 @@ export const submitCodingCode = async (req, res) => {
       totalTests: testCases.length,
       executionTime,
       memory,
+      error: submissionError,
       message:
         finalStatus === "accepted"
           ? "Accepted"
@@ -387,11 +434,8 @@ export const submitCodingCode = async (req, res) => {
           : "Submission failed",
     };
 
-    if (failedTestNumber !== null) {
-      response.failedTest = {
-        testNumber: failedTestNumber,
-        hidden: failedTestHidden,
-      };
+    if (failedTestInfo !== null) {
+      response.failedTest = failedTestInfo;
     }
 
     return res.status(200).json(response);

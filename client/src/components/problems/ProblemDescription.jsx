@@ -1,4 +1,9 @@
+﻿import ProblemExamples from "./ProblemExamples";
+
 const ProblemDescription = ({ problem }) => {
+  const inputFormat = problem.codingConfig?.inputFormat;
+  const outputFormat = problem.codingConfig?.outputFormat;
+
   return (
     <div className="h-full overflow-y-auto bg-slate-950 p-6 text-slate-300">
       {/* Title */}
@@ -17,11 +22,17 @@ const ProblemDescription = ({ problem }) => {
           <span className="text-xs capitalize text-slate-500">
             {problem.category}
           </span>
+
+          <span className="text-xs text-slate-600">•</span>
+
+          <span className="text-xs capitalize text-slate-500">
+            {problem.practiceType}
+          </span>
         </div>
       </div>
 
       {/* Description */}
-      <section className="mb-9">
+      <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-white">
           Description
         </h2>
@@ -31,10 +42,41 @@ const ProblemDescription = ({ problem }) => {
         </p>
       </section>
 
+      {/* Input Format */}
+      {inputFormat && (
+        <section className="mb-8">
+          <h2 className="mb-2 text-sm font-semibold text-white">
+            Input Format
+          </h2>
+          <p className="whitespace-pre-line text-sm leading-6 text-slate-400">
+            {inputFormat}
+          </p>
+        </section>
+      )}
+
+      {/* Output Format */}
+      {outputFormat && (
+        <section className="mb-8">
+          <h2 className="mb-2 text-sm font-semibold text-white">
+            Output Format
+          </h2>
+          <p className="whitespace-pre-line text-sm leading-6 text-slate-400">
+            {outputFormat}
+          </p>
+        </section>
+      )}
+
+      {/* Examples */}
+      {problem.examples?.length > 0 && (
+        <div className="mb-8 -mx-6">
+          <ProblemExamples examples={problem.examples} />
+        </div>
+      )}
+
       {/* Constraints */}
       {problem.constraints?.length > 0 && (
-        <section className="mb-9">
-          <h2 className="mb-4 text-sm font-semibold text-white">
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold text-white">
             Constraints
           </h2>
 
@@ -44,10 +86,7 @@ const ProblemDescription = ({ problem }) => {
                 key={index}
                 className="flex text-sm leading-6 text-slate-400"
               >
-                <span className="mr-3 select-none text-slate-700">
-                  •
-                </span>
-
+                <span className="mr-3 select-none text-slate-700">•</span>
                 <span>{constraint}</span>
               </li>
             ))}

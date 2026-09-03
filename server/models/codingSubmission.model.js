@@ -17,7 +17,7 @@ const codingSubmissionSchema = new mongoose.Schema(
 
     language: {
       type: String,
-      enum: ["javascript", "python", "cpp"],
+      enum: ["javascript", "python", "cpp", "java"],
       required: true,
     },
 
@@ -58,6 +58,22 @@ const codingSubmissionSchema = new mongoose.Schema(
     totalTests: {
       type: Number,
       default: 0,
+    },
+
+    error: {
+      type: String,
+      default: "",
+    },
+
+    failedTest: {
+      testNumber: { type: Number, default: null },
+      testCaseId: { type: String, default: null },
+      input: { type: String, default: "" },
+      expectedOutput: { type: String, default: "" },
+      actualOutput: { type: String, default: "" },
+      stdout: { type: String, default: "" },
+      error: { type: String, default: "" },
+      hidden: { type: Boolean, default: false },
     },
   },
   {

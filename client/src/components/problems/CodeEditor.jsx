@@ -1,21 +1,46 @@
-import Editor from "@monaco-editor/react";
+﻿import Editor from "@monaco-editor/react";
 
-const EDITOR_LANGUAGES = [
+const ALL_LANGUAGES = [
   {
     value: "javascript",
     label: "JavaScript",
+    monaco: "javascript",
   },
   {
     value: "python",
     label: "Python",
+    monaco: "python",
   },
   {
     value: "cpp",
     label: "C++",
+    monaco: "cpp",
+  },
+  {
+    value: "java",
+    label: "Java",
+    monaco: "java",
   },
 ];
 
-const CodeEditor = ({ code, setCode, language, setLanguage }) => {
+const CodeEditor = ({
+  code,
+  setCode,
+  language,
+  setLanguage,
+  supportedLanguages = ["javascript", "python", "cpp"],
+  onReset,
+}) => {
+  const availableLanguages = ALL_LANGUAGES.filter((item) =>
+    supportedLanguages.includes(item.value)
+  );
+
+  const effectiveLanguages =
+    availableLanguages.length > 0 ? availableLanguages : ALL_LANGUAGES;
+
+  const currentLangConfig =
+    ALL_LANGUAGES.find((item) => item.value === language) || ALL_LANGUAGES[0];
+
   return (
     <div className="flex h-full flex-col bg-slate-900">
       {/* Editor Header */}
@@ -26,9 +51,9 @@ const CodeEditor = ({ code, setCode, language, setLanguage }) => {
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-slate-500"
+            className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 outline-none transition focus:border-slate-500"
           >
-            {EDITOR_LANGUAGES.map((lang) => (
+            {effectiveLanguages.map((lang) => (
               <option key={lang.value} value={lang.value}>
                 {lang.label}
               </option>
@@ -37,18 +62,26 @@ const CodeEditor = ({ code, setCode, language, setLanguage }) => {
         </div>
 
         <button
-          onClick={() => setCode("")}
+          type="button"
+          onClick={() => {
+            if (onReset) {
+              onReset();
+            } else {
+              setCode("");
+            }
+          }}
           className="text-xs text-slate-500 transition hover:text-slate-300"
+          title="Reset to starter code"
         >
           Reset
         </button>
       </div>
 
-      {/* Monaco */}
+      {/* Monaco Editor */}
       <div className="min-h-0 flex-1">
         <Editor
           height="100%"
-          language={language}
+          language={currentLangConfig.monaco}
           theme="vs-dark"
           value={code}
           onChange={(value) => setCode(value || "")}

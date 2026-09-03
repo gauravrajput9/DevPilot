@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Plus, ArrowLeft, Code2, Layers, Cpu, Clock, HardDrive, CheckCircle2, ListChecks } from "lucide-react";
+import { Plus, ArrowLeft, Code2, Layers, Cpu, Clock, HardDrive, CheckCircle2, ListChecks, AlertCircle } from "lucide-react";
 import { getProblem, updateProblem } from "../../services/problemApi";
 import { PageError, PageLoading } from "../../components/ui/PageState";
 import { useToast } from "../../components/ui/ToastProvider";
+import { DEFAULT_ARRAY_STARTER_CODE } from "../../constants/starterTemplates";
 
 const panelClass =
   "rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 shadow-sm";
@@ -195,6 +196,24 @@ const EditProblem = () => {
         [language]: value,
       },
     }));
+  };
+
+  const handleLoadArrayTemplate = () => {
+    setFormData((prev) => ({
+      ...prev,
+      supportedLanguages: ["javascript", "python", "cpp", "java"],
+      inputFormat:
+        "The first line contains an integer N, the number of elements in the array.\nThe second line contains N space-separated integers.",
+      outputFormat: "Print the required output to standard output (stdout).",
+      starterCode: {
+        ...prev.starterCode,
+        ...DEFAULT_ARRAY_STARTER_CODE,
+      },
+    }));
+    toast.success(
+      "Applied standard length-prefixed array template for all languages.",
+      { title: "Template applied" }
+    );
   };
 
   const handleExampleChange = (index, field, value) => {
@@ -481,6 +500,26 @@ const EditProblem = () => {
             <p className="mb-6 text-sm text-zinc-500">
               Languages, execution constraints, and input/output specifications.
             </p>
+
+            {/* Input Length Protocol Banner */}
+            <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                  <AlertCircle size={16} />
+                  <span>Standard Input Convention: Provide Input Length (N) on Line 1</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLoadArrayTemplate}
+                  className="rounded-lg border border-amber-500/40 bg-black/40 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20"
+                >
+                  Apply Length-Prefixed Array Template
+                </button>
+              </div>
+              <p className="leading-relaxed text-amber-200/90">
+                To guarantee zero inconsistencies across languages, always structure array inputs so that Line 1 gives the length <code>N</code> and Line 2 gives the space-separated elements. This prevents C++ and Java from reading garbage memory or throwing <code>std::length_error</code>.
+              </p>
+            </div>
 
             <div className="mb-6">
               <label className={labelClass}>Allowed Languages</label>

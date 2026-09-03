@@ -129,7 +129,12 @@ export const getProblem = async (req, res) => {
         examples: problem.examples || [],
         constraints: problem.constraints || [],
         testCases: publicTestCases,
-        codingConfig: problem.codingConfig,
+        codingConfig: problem.codingConfig
+          ? {
+              ...problem.codingConfig,
+              testCases: publicTestCases,
+            }
+          : undefined,
         frontendConfig: problem.frontendConfig,
         backendConfig: problem.backendConfig,
       },

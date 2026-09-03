@@ -372,17 +372,36 @@ const ManageTestCases = () => {
           INSTRUCTION GUIDE PANEL
       ========================================================= */}
       {showInstructions && (
-        <div className="mb-8 overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/20 via-black/40 to-transparent p-6 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="mb-8 overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/20 via-black/40 to-transparent p-6 shadow-xl space-y-5">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-violet-400" />
               <h2 className="text-base font-semibold text-white">
-                How Test Cases Work in DevPilot
+                Admin Guide: How Test Cases Must Be Structured
               </h2>
             </div>
             <span className="text-xs text-violet-300 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20">
-              Piston Execution Engine
+              DevPilot Judge Standards
             </span>
+          </div>
+
+          {/* CRITICAL RULE BANNER */}
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+              <AlertCircle size={16} className="text-amber-400" />
+              <span>CRITICAL RULE: Always Provide Input Length on Line 1 for Array/Collection Problems</span>
+            </div>
+            <p className="mt-2 text-amber-100/90 leading-relaxed">
+              In statically typed languages like <strong>C++</strong> (<code>cin &gt;&gt; n; vector&lt;int&gt; arr(n);</code>) and <strong>Java</strong> (<code>int n = sc.nextInt(); int[] arr = new int[n];</code>), programs allocate memory using the first integer received. If you omit the length and provide only raw numbers (e.g. <code>10 20 5 8</code>), the user's code reads <code>10</code> as <code>n</code>, tries to read 10 items, reaches EOF, and reads uninitialized garbage memory or crashes with <code>std::length_error</code>.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="rounded border border-amber-500/30 bg-black/50 px-3 py-1.5 font-mono text-[11px] text-emerald-300">
+                Correct: <span className="text-white">Line 1:</span> 4 <span className="text-white">Line 2:</span> 10 20 5 8
+              </div>
+              <div className="rounded border border-rose-500/30 bg-black/50 px-3 py-1.5 font-mono text-[11px] text-rose-300">
+                Wrong: 10 20 5 8 (Omitted length)
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-5 text-xs md:grid-cols-3">
@@ -393,14 +412,14 @@ const ManageTestCases = () => {
                 <span>1. Standard Input (stdin)</span>
               </div>
               <p className="text-zinc-400 leading-relaxed">
-                Raw text provided to the program's input stream. For multi-line inputs, use line breaks (Enter).
+                Raw text piped to the program. Use Line 1 for length/count and Line 2 for values:
               </p>
               <div className="rounded border border-white/10 bg-zinc-950 p-2 font-mono text-[11px] text-zinc-300">
-                <div>5</div>
+                <div className="text-violet-400">5</div>
                 <div>10 20 30 40 50</div>
               </div>
               <p className="text-[11px] text-zinc-500">
-                Matches <code className="text-violet-300">readline()</code>, <code className="text-violet-300">cin &gt;&gt;</code>, or <code className="text-violet-300">sys.stdin</code>.
+                Guarantees zero inconsistency across C++, Python, Java, and JavaScript.
               </p>
             </div>
 
@@ -411,13 +430,13 @@ const ManageTestCases = () => {
                 <span>2. Expected Output (stdout)</span>
               </div>
               <p className="text-zinc-400 leading-relaxed">
-                The exact printed output expected from a correct program.
+                The exact expected output. Trailing line spaces and newlines are auto-trimmed.
               </p>
               <div className="rounded border border-white/10 bg-zinc-950 p-2 font-mono text-[11px] text-zinc-300">
                 <div>150</div>
               </div>
               <p className="text-[11px] text-zinc-500">
-                Trailing whitespace and newline endings (<code className="text-emerald-300">\r\n</code> vs <code className="text-emerald-300">\n</code>) are automatically normalized during judging.
+                Do not include debug strings, labels, or prompt text in expected output.
               </p>
             </div>
 
@@ -425,16 +444,16 @@ const ManageTestCases = () => {
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-2">
               <div className="flex items-center gap-1.5 font-semibold text-blue-300">
                 <EyeOff size={15} />
-                <span>3. Public vs Hidden Cases</span>
+                <span>3. Public vs Evaluation Cases</span>
               </div>
               <ul className="space-y-1.5 text-zinc-400">
                 <li className="flex items-start gap-1.5">
                   <Eye size={13} className="text-zinc-400 shrink-0 mt-0.5" />
-                  <span><strong>Public (Hidden: False)</strong>: Visible in the learner's test runner to test and debug their code.</span>
+                  <span><strong>Public</strong>: Visible in the learner's testcase runner for quick testing.</span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <EyeOff size={13} className="text-violet-400 shrink-0 mt-0.5" />
-                  <span><strong>Hidden (Hidden: True)</strong>: Kept secret during practice, evaluated only upon full submission to prevent hardcoded answers.</span>
+                  <span><strong>Hidden</strong>: Kept private, used upon submission to test edge cases & prevent hardcoding.</span>
                 </li>
               </ul>
             </div>
@@ -484,6 +503,32 @@ const ManageTestCases = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Input Length Protocol Banner */}
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                  <AlertCircle size={15} />
+                  <span>Standard Input Convention: Provide Length (N) on Line 1</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      input: "5\n10 20 30 40 50",
+                      expectedOutput: "50",
+                    }));
+                  }}
+                  className="rounded border border-amber-500/40 bg-black/40 px-2 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-500/20"
+                >
+                  Insert Sample Array Format
+                </button>
+              </div>
+              <p className="mt-1 leading-relaxed text-amber-200/80">
+                For array problems, always supply the element count on line 1 and elements on line 2 (e.g. <code>5\n10 20 30 40 50</code>). This prevents C++ and Java memory allocation errors.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Input (stdin) */}
               <div>
@@ -491,19 +536,19 @@ const ManageTestCases = () => {
                   <label className="text-sm font-medium text-zinc-300">
                     Input (Standard Input / stdin)
                   </label>
-                  <span className="text-xs text-zinc-500 font-mono">Raw string</span>
+                  <span className="text-xs text-zinc-500 font-mono">Length-prefixed raw string</span>
                 </div>
                 <textarea
                   name="input"
                   rows={5}
                   value={formData.input}
                   onChange={handleChange}
-                  placeholder="e.g. 2 7 11 15\n9"
+                  placeholder="e.g.&#10;5&#10;10 20 30 40 50"
                   className="w-full resize-y rounded-xl border border-white/10 bg-black/40 p-3.5 font-mono text-xs text-zinc-200 outline-none transition focus:border-violet-500/50"
                   required
                 />
                 <p className="mt-1.5 text-xs text-zinc-500">
-                  This text will be piped directly into the process's standard input.
+                  Line 1: length N. Line 2: space-separated values. Piped directly to stdin.
                 </p>
               </div>
 
