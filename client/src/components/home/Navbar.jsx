@@ -1,25 +1,22 @@
 import { ArrowRight, Bot, Menu, Moon, Search, X } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { authClient } from "../../lib/authClient";
-import { useEffect } from "react";
-import { useRef } from "react";
 
 const navItems = [
-  "Home",
-  "Problems",
-  "AI Mentor",
-  "Interview",
-  "Roadmap",
-  "Leaderboard",
+  { name: "Home", path: "/" },
+  { name: "Problems", path: "/problems" },
+  { name: "AI Mentor", path: "/ai-mentor" },
+  { name: "Interview", path: "/interview" },
+  { name: "Roadmap", path: "/roadmap" },
+  { name: "Leaderboard", path: "/leaderboard" },
 ];
 
 const Navbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
   const { data: session } = authClient.useSession();
+  const location = useLocation();
   const searchRef = useRef(null);
-
-  // console.log(session?.user);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -37,11 +34,18 @@ const Navbar = () => {
     };
   }, []);
 
+  const isItemActive = (path) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.toLowerCase().startsWith(path.toLowerCase());
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#030407]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-5 lg:px-8">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/20">
             <Bot size={21} />
 
@@ -54,23 +58,26 @@ const Navbar = () => {
               Pilot
             </span>
           </span>
-        </a>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item, index) => (
-            <a
-              key={item}
-              href={`/${item}`}
-              className={`rounded-lg px-3.5 py-2 text-sm transition-all ${
-                index === 0
-                  ? "bg-white/[0.06] text-white"
-                  : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
-              }`}
-            >
-              {item}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const active = isItemActive(item.path);
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`rounded-lg px-3.5 py-2 text-sm transition-all ${
+                  active
+                    ? "bg-white/[0.08] text-white font-medium"
+                    : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                }`}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Desktop Right Section */}
@@ -115,16 +122,23 @@ const Navbar = () => {
       {mobileMenu && (
         <div className="border-t border-white/[0.07] bg-[#050609] px-5 py-5 lg:hidden">
           <nav className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <a
-                key={item}
-                href="#"
-                onClick={() => setMobileMenu(false)}
-                className="rounded-lg px-4 py-3 text-sm text-zinc-400 transition hover:bg-white/[0.05] hover:text-white"
-              >
-                {item}
-              </a>
-            ))}
+            {navItems.map((item) => {
+              const active = isItemActive(item.path);
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  onClick={() => setMobileMenu(false)}
+                  className={`rounded-lg px-4 py-3 text-sm transition ${
+                    active
+                      ? "bg-white/[0.08] text-white font-medium"
+                      : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
 
           {!session ? (

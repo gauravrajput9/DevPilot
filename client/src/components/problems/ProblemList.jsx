@@ -12,7 +12,14 @@ const languageOptions = ["all", "javascript", "python", "cpp"];
 const defaultCategoryOptions = {
   coding: ["arrays", "strings", "linked lists", "stacks", "trees", "graphs"],
   frontend: ["react", "jsx", "components", "state", "apis", "ui"],
-  backend: ["rest api", "node.js", "express", "mongodb", "authentication", "crud"],
+  backend: [
+    "rest api",
+    "node.js",
+    "express",
+    "mongodb",
+    "authentication",
+    "crud",
+  ],
 };
 
 const formatLabel = (value) => {
@@ -65,7 +72,8 @@ const ProblemList = ({ practiceType, title, description }) => {
         const data = await getProblems({ practiceType });
         setProblems(data.problems || []);
       } catch (err) {
-        const message = err.response?.data?.message || "Failed to load problems.";
+        const message =
+          err.response?.data?.message || "Failed to load problems.";
 
         setError(message);
         toast.error(message, { title: "Unable to load problems" });
@@ -78,7 +86,9 @@ const ProblemList = ({ practiceType, title, description }) => {
   }, [practiceType, toast]);
 
   const categoryOptions = useMemo(() => {
-    const categories = problems.map((problem) => problem.category).filter(Boolean);
+    const categories = problems
+      .map((problem) => problem.category)
+      .filter(Boolean);
     const defaults = defaultCategoryOptions[practiceType] || [];
 
     return ["all", ...new Set([...defaults, ...categories])];
@@ -98,13 +108,16 @@ const ProblemList = ({ practiceType, title, description }) => {
         .join(" ")
         .toLowerCase();
 
-      const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch);
+      const matchesSearch =
+        !normalizedSearch || searchableText.includes(normalizedSearch);
       const matchesCategory =
         selectedCategory === "all" || problem.category === selectedCategory;
       const matchesDifficulty =
-        selectedDifficulty === "all" || problem.difficulty === selectedDifficulty;
+        selectedDifficulty === "all" ||
+        problem.difficulty === selectedDifficulty;
       const matchesProblemType =
-        selectedProblemType === "all" || problem.problemType === selectedProblemType;
+        selectedProblemType === "all" ||
+        problem.problemType === selectedProblemType;
       const matchesLanguage =
         selectedLanguage === "all" ||
         (problem.supportedLanguages || []).includes(selectedLanguage);
@@ -151,7 +164,9 @@ const ProblemList = ({ practiceType, title, description }) => {
             Back to practice areas
           </Link>
 
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight">
+            {title}
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
             {description}
           </p>
@@ -173,7 +188,9 @@ const ProblemList = ({ practiceType, title, description }) => {
 
           <div className="space-y-4">
             <div>
-              <p className="mb-2 text-xs font-medium uppercase text-slate-600">Category</p>
+              <p className="mb-2 text-xs font-medium uppercase text-slate-600">
+                Category
+              </p>
               <div className="flex flex-wrap gap-2">
                 {categoryOptions.map((category) => (
                   <FilterButton
@@ -188,7 +205,9 @@ const ProblemList = ({ practiceType, title, description }) => {
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium uppercase text-slate-600">Difficulty</p>
+              <p className="mb-2 text-xs font-medium uppercase text-slate-600">
+                Difficulty
+              </p>
               <div className="flex flex-wrap gap-2">
                 {difficultyOptions.map((difficulty) => (
                   <FilterButton
@@ -204,7 +223,9 @@ const ProblemList = ({ practiceType, title, description }) => {
 
             {practiceType === "coding" ? (
               <div>
-                <p className="mb-2 text-xs font-medium uppercase text-slate-600">Language</p>
+                <p className="mb-2 text-xs font-medium uppercase text-slate-600">
+                  Language
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {languageOptions.map((language) => (
                     <FilterButton
@@ -257,42 +278,50 @@ const ProblemList = ({ practiceType, title, description }) => {
 
         {!loading && !error && filteredProblems.length > 0 && (
           <div className="space-y-8">
-            {Object.entries(groupedProblems).map(([groupName, groupProblems]) => (
-              <section key={groupName}>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  {formatLabel(groupName)}
-                </h2>
+            {Object.entries(groupedProblems).map(
+              ([groupName, groupProblems]) => (
+                <section key={groupName}>
+                  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {formatLabel(groupName)}
+                  </h2>
 
-                <div className="overflow-hidden rounded-lg border border-slate-800">
-                  {groupProblems.map((problem) => (
-                    <Link
-                      key={problem._id}
-                      to={`/problems/${problem._id}`}
-                      className="group flex items-center justify-between gap-4 border-b border-slate-800 bg-slate-950 px-5 py-4 transition last:border-b-0 hover:bg-slate-900"
-                    >
-                      <div className="min-w-0">
-                        <h3 className="truncate text-sm font-medium text-slate-200">
-                          {problem.title}
-                        </h3>
-                        <p className="mt-1 line-clamp-1 text-xs text-slate-600">
-                          {problem.description}
-                        </p>
-                      </div>
+                  <div className="overflow-hidden rounded-lg border border-slate-800">
+                    {groupProblems.map((problem) => (
+                      <Link
+                        key={problem._id}
+                        to={
+                          problem.practiceType === "frontend"
+                            ? `/problems/frontend/${problem._id}`
+                            : problem.practiceType === "backend"
+                              ? `/problems/backend/${problem._id}`
+                              : `/problems/coding/${problem._id}`
+                        }
+                        className="group flex items-center justify-between gap-4 border-b border-slate-800 bg-slate-950 px-5 py-4 transition last:border-b-0 hover:bg-slate-900"
+                      >
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-medium text-slate-200">
+                            {problem.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-1 text-xs text-slate-600">
+                            {problem.description}
+                          </p>
+                        </div>
 
-                      <div className="flex shrink-0 items-center gap-3">
-                        <span className="rounded-md border border-slate-800 px-2.5 py-1 text-xs text-slate-500">
-                          {formatLabel(problem.difficulty)}
-                        </span>
-                        <ArrowRight
-                          size={16}
-                          className="text-slate-700 transition group-hover:translate-x-1 group-hover:text-slate-300"
-                        />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
+                        <div className="flex shrink-0 items-center gap-3">
+                          <span className="rounded-md border border-slate-800 px-2.5 py-1 text-xs text-slate-500">
+                            {formatLabel(problem.difficulty)}
+                          </span>
+                          <ArrowRight
+                            size={16}
+                            className="text-slate-700 transition group-hover:translate-x-1 group-hover:text-slate-300"
+                          />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ),
+            )}
           </div>
         )}
       </main>

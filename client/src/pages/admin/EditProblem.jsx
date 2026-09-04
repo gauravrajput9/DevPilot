@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Plus, ArrowLeft, Code2, Layers, Cpu, Clock, HardDrive, CheckCircle2, ListChecks, AlertCircle } from "lucide-react";
+import { Plus, ArrowLeft, Code2, Layers, Cpu, Clock, HardDrive, CheckCircle2, ListChecks, AlertCircle, Check } from "lucide-react";
 import { getProblem, updateProblem } from "../../services/problemApi";
 import { PageError, PageLoading } from "../../components/ui/PageState";
 import { useToast } from "../../components/ui/ToastProvider";
-import { DEFAULT_ARRAY_STARTER_CODE } from "../../constants/starterTemplates";
+import { DEFAULT_ARRAY_STARTER_CODE, DEFAULT_GENERAL_STARTER_CODE } from "../../constants/starterTemplates";
+import SimpleStarterCodeGuide from "../../components/admin/SimpleStarterCodeGuide";
 
 const panelClass =
   "rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 shadow-sm";
@@ -216,6 +217,51 @@ const EditProblem = () => {
     );
   };
 
+  const handleApplySingleTemplate = (lang, code) => {
+    setFormData((prev) => ({
+      ...prev,
+      starterCode: {
+        ...prev.starterCode,
+        [lang]: code,
+      },
+    }));
+    toast.success(`Applied template for ${lang === "cpp" ? "C++" : lang.toUpperCase()}`);
+  };
+
+  const handleApplyAllArrayTemplates = () => {
+    setFormData((prev) => ({
+      ...prev,
+      supportedLanguages: ["javascript", "python", "cpp", "java"],
+      starterCode: {
+        ...DEFAULT_ARRAY_STARTER_CODE,
+      },
+    }));
+    toast.success("Applied array templates for all 4 languages.");
+  };
+
+  const handleApplyAllGeneralTemplates = () => {
+    setFormData((prev) => ({
+      ...prev,
+      supportedLanguages: ["javascript", "python", "cpp", "java"],
+      starterCode: {
+        ...DEFAULT_GENERAL_STARTER_CODE,
+      },
+    }));
+    toast.success("Applied stream templates for all 4 languages.");
+  };
+
+  const handleApplyPatternAllLanguages = (starterCodes) => {
+    setFormData((prev) => ({
+      ...prev,
+      supportedLanguages: ["javascript", "python", "cpp", "java"],
+      starterCode: {
+        ...prev.starterCode,
+        ...starterCodes,
+      },
+    }));
+    toast.success("Loaded starter code for all 4 languages!");
+  };
+
   const handleExampleChange = (index, field, value) => {
     setFormData((prev) => {
       const updatedExamples = [...prev.examples];
@@ -275,10 +321,28 @@ const EditProblem = () => {
       };
 
       if (formData.practiceType === "coding") {
-        payload.supportedLanguages = formData.supportedLanguages;
+        const requiredLangs = ["javascript", "python", "cpp", "java"];
+        const missing = requiredLangs.filter(
+          (lang) => !formData.starterCode[lang] || !formData.starterCode[lang].trim()
+        );
+
+        if (missing.length > 0) {
+          const names = missing
+            .map((l) => (l === "cpp" ? "C++" : l.charAt(0).toUpperCase() + l.slice(1)))
+            .join(", ");
+          setSaving(false);
+          toast.error(`Starter code is required for every language: ${names}`, {
+            title: "Missing Starter Code",
+          });
+          const el = document.getElementById("starter-code-section");
+          el?.scrollIntoView({ behavior: "smooth" });
+          return;
+        }
+
+        payload.supportedLanguages = requiredLangs;
         payload.starterCode = formData.starterCode;
         payload.codingConfig = {
-          languages: formData.supportedLanguages,
+          languages: requiredLangs,
           inputFormat: formData.inputFormat,
           outputFormat: formData.outputFormat,
           starterCode: formData.starterCode,
@@ -717,24 +781,123 @@ const EditProblem = () => {
 
         {/* STARTER CODE */}
         {formData.practiceType === "coding" && (
-          <section className={panelClass}>
-            <h2 className="mb-2 text-lg font-semibold text-white">Starter Code</h2>
-            <div className="space-y-4">
-              {formData.supportedLanguages.map((lang) => (
-                <div key={lang} className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-violet-400">
-                      {lang === "cpp" ? "C++" : lang.charAt(0).toUpperCase() + lang.slice(1)}
-                    </span>
-                  </div>
-                  <textarea
-                    rows={6}
-                    value={formData.starterCode[lang] || ""}
-                    onChange={(e) => handleStarterCodeChange(lang, e.target.value)}
-                    className="w-full resize-y rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-xs text-zinc-200 outline-none focus:border-violet-500/50"
-                  />
+          <section id="starter-code-section" className={`${panelClass} space-y-6`}>
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Starter Code Configuration</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Starter code is <strong className="text-white">required for all 4 supported languages</strong> (JavaScript, Python, C++, Java) to guarantee learners can solve problems in their preferred language.
+                  </p>
                 </div>
-              ))}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleApplyAllArrayTemplates}
+                    className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300 transition hover:bg-violet-500/20"
+                  >
+                    Load All Array Templates
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyAllGeneralTemplates}
+                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+                  >
+                    Load All Stream Templates
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Simple Data Structure Starter Code & Test Case Guide */}
+            <SimpleStarterCodeGuide
+              onApplyAllLanguages={handleApplyPatternAllLanguages}
+              onApplySingleLanguage={handleApplySingleTemplate}
+            />
+
+            {/* Language Starter Code Editors */}
+            <div className="space-y-5">
+              {AVAILABLE_LANGUAGES.map(({ value: lang, label }) => {
+                const code = formData.starterCode[lang] || "";
+                const isProvided = Boolean(code.trim());
+
+                return (
+                  <div
+                    key={lang}
+                    className={`rounded-xl border p-4 transition ${
+                      isProvided
+                        ? "border-white/10 bg-black/20"
+                        : "border-amber-500/30 bg-amber-500/[0.02]"
+                    }`}
+                  >
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm font-bold text-white">
+                          {label}
+                        </span>
+                        <span className="text-xs text-zinc-500 font-mono">
+                          main.{lang === "javascript" ? "js" : lang === "python" ? "py" : lang}
+                        </span>
+                        {isProvided ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                            <Check size={11} /> Provided
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-400">
+                            <AlertCircle size={11} /> Required
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleApplySingleTemplate(
+                              lang,
+                              DEFAULT_ARRAY_STARTER_CODE[lang]
+                            )
+                          }
+                          className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300 transition hover:bg-white/[0.08] hover:text-white"
+                        >
+                          Array Template
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleApplySingleTemplate(
+                              lang,
+                              DEFAULT_GENERAL_STARTER_CODE[lang]
+                            )
+                          }
+                          className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300 transition hover:bg-white/[0.08] hover:text-white"
+                        >
+                          Stream Template
+                        </button>
+                        {code && (
+                          <button
+                            type="button"
+                            onClick={() => handleStarterCodeChange(lang, "")}
+                            className="rounded border border-white/5 px-2 py-1 text-[11px] text-zinc-500 hover:text-rose-400 transition"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <textarea
+                      rows={7}
+                      value={code}
+                      onChange={(e) => handleStarterCodeChange(lang, e.target.value)}
+                      placeholder={`// Provide ${label} starter boilerplate here...\n// Read input from stdin and write output to stdout.`}
+                      className="w-full resize-y rounded-lg border border-white/10 bg-black/40 p-3.5 font-mono text-xs text-zinc-200 outline-none focus:border-violet-500/50"
+                      required
+                    />
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

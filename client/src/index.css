@@ -27,3 +27,21 @@ body {
   min-width: 320px;
   background: #030407;
 }
+
+/* Prevent Sandpack broken persistent white loading overlay from covering preview */
+.sp-loading,
+.sp-overlay.sp-loading {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure Sandpack preview iframe takes full container dimensions */
+.sp-preview,
+.sp-preview-container,
+.sp-preview-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  flex: 1 1 0% !important;
+}

@@ -35,22 +35,26 @@ const codingStarterCodeSchema = new mongoose.Schema(
   {
     javascript: {
       type: String,
-      default: "",
+      required: [true, "JavaScript starter code is required"],
+      trim: true,
     },
 
     python: {
       type: String,
-      default: "",
+      required: [true, "Python starter code is required"],
+      trim: true,
     },
 
     cpp: {
       type: String,
-      default: "",
+      required: [true, "C++ starter code is required"],
+      trim: true,
     },
 
     java: {
       type: String,
-      default: "",
+      required: [true, "Java starter code is required"],
+      trim: true,
     },
   },
   {
@@ -538,12 +542,14 @@ const problemSchema = new mongoose.Schema(
  */
 problemSchema.pre("validate", function () {
   if (this.practiceType === "coding") {
+    const requiredLanguages = ["javascript", "python", "cpp", "java"];
+
     if (!this.codingConfig) {
       this.codingConfig = {
         languages:
           this.supportedLanguages && this.supportedLanguages.length > 0
             ? this.supportedLanguages
-            : ["javascript"],
+            : requiredLanguages,
         starterCode: this.starterCode || {},
         testCases: Array.isArray(this.testCases) ? this.testCases : [],
       };
@@ -573,10 +579,19 @@ problemSchema.pre("validate", function () {
       }
     }
 
+    const starter = this.codingConfig.starterCode || this.starterCode || {};
+    for (const lang of requiredLanguages) {
+      if (!starter[lang] || !String(starter[lang]).trim()) {
+        throw new Error(
+          `Starter code must be provided for every language that the application uses: ${lang} is missing`
+        );
+      }
+    }
+
     // Mirror back to flat fields for consistent reads
     this.starterCode = this.codingConfig.starterCode || this.starterCode;
     this.supportedLanguages =
-      this.codingConfig.languages || this.supportedLanguages;
+      this.codingConfig.languages || requiredLanguages;
     this.testCases = this.codingConfig.testCases || this.testCases;
   }
 

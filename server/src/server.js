@@ -13,7 +13,12 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+        return callback(null, true);
+      }
+      callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -26,6 +31,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 // Application Routes
 app.use("/api/problems", problemRoutes);
 app.use("/api/submissions", submissionRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/admin/problems", adminRoutes);
 
 app.get("/", (req, res) => {

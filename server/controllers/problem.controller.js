@@ -229,13 +229,32 @@ export const createProblem = async (req, res) => {
     };
 
     if (practiceType === "coding") {
+      const requiredLanguages = ["javascript", "python", "cpp", "java"];
+      const candidateStarterCode =
+        codingConfig?.starterCode || starterCode || {};
+
+      const missingLanguages = requiredLanguages.filter(
+        (lang) =>
+          !candidateStarterCode[lang] ||
+          !String(candidateStarterCode[lang]).trim()
+      );
+
+      if (missingLanguages.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Starter code must be provided for every supported language (${missingLanguages.join(", ")} missing)`,
+        });
+      }
+
+      problemData.supportedLanguages = requiredLanguages;
+      problemData.starterCode = candidateStarterCode;
       problemData.codingConfig = codingConfig || {
-        languages: supportedLanguages && supportedLanguages.length > 0
-          ? supportedLanguages
-          : ["javascript"],
-        starterCode: starterCode || {},
+        languages: requiredLanguages,
+        starterCode: candidateStarterCode,
         testCases: Array.isArray(testCases) ? testCases : [],
       };
+      problemData.codingConfig.languages = requiredLanguages;
+      problemData.codingConfig.starterCode = candidateStarterCode;
     } else if (practiceType === "frontend") {
       problemData.frontendConfig = frontendConfig || {
         framework: "react",
@@ -348,6 +367,41 @@ export const updateProblem = async (req, res) => {
     if (payload.tags !== undefined) problem.tags = payload.tags;
     if (payload.constraints !== undefined) problem.constraints = payload.constraints;
     if (payload.examples !== undefined) problem.examples = payload.examples;
+
+    const isCoding =
+      (payload.practiceType !== undefined ? payload.practiceType : problem.practiceType) === "coding";
+
+    if (isCoding) {
+      if (
+        payload.starterCode !== undefined ||
+        payload.codingConfig?.starterCode !== undefined
+      ) {
+        const requiredLanguages = ["javascript", "python", "cpp", "java"];
+        const existingStarter =
+          problem.codingConfig?.starterCode && typeof problem.codingConfig.starterCode.toObject === "function"
+            ? problem.codingConfig.starterCode.toObject()
+            : problem.codingConfig?.starterCode || problem.starterCode || {};
+
+        const candidateStarterCode = {
+          ...existingStarter,
+          ...(payload.starterCode || {}),
+          ...(payload.codingConfig?.starterCode || {}),
+        };
+
+        const missingLanguages = requiredLanguages.filter(
+          (lang) =>
+            !candidateStarterCode[lang] ||
+            !String(candidateStarterCode[lang]).trim()
+        );
+
+        if (missingLanguages.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Starter code must be provided for every supported language (${missingLanguages.join(", ")} missing)`,
+          });
+        }
+      }
+    }
 
     if (payload.supportedLanguages !== undefined) {
       problem.supportedLanguages = payload.supportedLanguages;
