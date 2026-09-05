@@ -1,4 +1,8 @@
-﻿import Editor from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
+import {
+  vsCodeEditorOptions,
+  setupCodingLanguages,
+} from "../../utils/monacoSuggestions";
 
 const ALL_LANGUAGES = [
   {
@@ -40,6 +44,10 @@ const CodeEditor = ({
 
   const currentLangConfig =
     ALL_LANGUAGES.find((item) => item.value === language) || ALL_LANGUAGES[0];
+
+  const handleEditorWillMount = (monaco) => {
+    setupCodingLanguages(monaco);
+  };
 
   return (
     <div className="flex h-full flex-col bg-slate-900">
@@ -85,18 +93,8 @@ const CodeEditor = ({
           theme="vs-dark"
           value={code}
           onChange={(value) => setCode(value || "")}
-          options={{
-            fontSize: 14,
-            minimap: {
-              enabled: false,
-            },
-            padding: {
-              top: 16,
-            },
-            smoothScrolling: true,
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-          }}
+          beforeMount={handleEditorWillMount}
+          options={vsCodeEditorOptions}
         />
       </div>
     </div>
